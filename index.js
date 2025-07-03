@@ -1,0 +1,46 @@
+/**
+ * Uru MCP - Main Entry Point
+ *
+ * This is the main entry point when the package is run directly
+ * (not through the CLI). It starts the MCP server with default configuration.
+ */
+
+const UruMCPServer = require('./lib/mcp-server');
+const ConfigManager = require('./lib/config-manager');
+
+async function main() {
+  try {
+    // Load configuration
+    const configManager = new ConfigManager();
+    const config = await configManager.loadConfig();
+
+    // Validate required configuration
+    if (!config.token) {
+      console.error('❌ Authentication token is required. Set URU_TOKEN environment variable or run: npx uru-mcp --setup');
+      process.exit(1);
+    }
+
+    // Start MCP server
+    const server = new UruMCPServer(config);
+    await server.start();
+
+  } catch (error) {
+    console.error('❌ Error:', error.message);
+    process.exit(1);
+  }
+}
+
+// Handle process signals gracefully
+process.on('SIGINT', () => {
+  process.exit(0);
+});
+
+process.on('SIGTERM', () => {
+  process.exit(0);
+});
+
+// Start the server
+main().catch((error) => {
+  console.error('❌ Unexpected error:', error.message);
+  process.exit(1);
+});
