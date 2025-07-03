@@ -48,24 +48,38 @@ const options = program.opts();
 
 async function main() {
   try {
-    console.log(chalk.blue.bold('🚀 Uru MCP'));
-    console.log(chalk.gray('Connecting Uru Platform to Claude Desktop\n'));
+    // Only show startup messages for special commands, not for normal MCP server operation
+    // When running as MCP server, all output must go to stderr to avoid contaminating JSON-RPC on stdout
 
-    // Handle special commands
+    // Handle special commands (these can use console.log since they don't run the MCP server)
     if (options.setup) {
+      console.log(chalk.blue.bold('🚀 Uru MCP'));
+      console.log(chalk.gray('Connecting Uru Platform to Claude Desktop\n'));
       await runSetupWizard();
       return;
     }
 
     if (options.test) {
+      console.log(chalk.blue.bold('🚀 Uru MCP'));
+      console.log(chalk.gray('Connecting Uru Platform to Claude Desktop\n'));
       await testConnection();
       return;
     }
 
     if (options.claudeConfig) {
+      console.log(chalk.blue.bold('🚀 Uru MCP'));
+      console.log(chalk.gray('Connecting Uru Platform to Claude Desktop\n'));
       showClaudeConfig();
       return;
     }
+
+    // For MCP server operation, redirect all output to stderr
+    // This ensures only JSON-RPC messages go to stdout
+    const originalConsoleLog = console.log;
+    const originalConsoleError = console.error;
+
+    console.log = (...args) => originalConsoleError(...args);
+    console.error = (...args) => originalConsoleError(...args);
 
     // Load configuration
     const configManager = new ConfigManager();
@@ -77,12 +91,14 @@ async function main() {
       process.exit(1);
     }
 
-    // Start MCP server
-    console.log(chalk.green('✅ Starting Uru MCP Server...'));
-    console.log(chalk.gray(`   Proxy: ${config.proxyUrl}`));
-    console.log(chalk.gray(`   Token: ${config.token.substring(0, 20)}...`));
-    console.log(chalk.gray(`   Debug: ${config.debug ? 'enabled' : 'disabled'}`));
-    console.log();
+    // Start MCP server (all logging will go to stderr)
+    if (config.debug) {
+      console.error(chalk.green('✅ Starting Uru MCP Server...'));
+      console.error(chalk.gray(`   Proxy: ${config.proxyUrl}`));
+      console.error(chalk.gray(`   Token: ${config.token.substring(0, 20)}...`));
+      console.error(chalk.gray(`   Debug: enabled`));
+      console.error();
+    }
 
     const server = new UruMCPServer(config);
     await server.start();

@@ -10,6 +10,10 @@ const ConfigManager = require('./lib/config-manager');
 
 async function main() {
   try {
+    // Ensure all console output goes to stderr to avoid contaminating JSON-RPC on stdout
+    const originalConsoleLog = console.log;
+    console.log = (...args) => console.error(...args);
+
     // Load configuration
     const configManager = new ConfigManager();
     const config = await configManager.loadConfig();
