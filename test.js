@@ -54,10 +54,10 @@ async function runTests() {
 
   console.log();
 
-  // Test 2: MCP Server Creation
+  // Test 2: MCP Server Creation and Compliance
   try {
-    console.log(chalk.yellow('Test 2: MCP Server Creation'));
-    
+    console.log(chalk.yellow('Test 2: MCP Server Creation and Compliance'));
+
     const testConfig = {
       proxyUrl: 'https://mcp.uruenterprises.com',
       token: 'test-token',
@@ -75,16 +75,82 @@ async function runTests() {
       failed++;
     }
 
+    // Test server instance exists and has proper structure
+    if (server.server && typeof server.server.setRequestHandler === 'function') {
+      console.log(chalk.green('✅ Server instance properly initialized'));
+      passed++;
+    } else {
+      console.log(chalk.red('❌ Server instance initialization failed'));
+      failed++;
+    }
+
+    // Test that server has proper configuration
+    if (server.config && server.config.proxyUrl && server.config.token) {
+      console.log(chalk.green('✅ Server configuration compliance'));
+      passed++;
+    } else {
+      console.log(chalk.red('❌ Server configuration incomplete'));
+      failed++;
+    }
+
+    // Test error handling method
+    if (typeof server.createMcpError === 'function') {
+      const testError = server.createMcpError(-32000, 'Test error', { test: true });
+      if (testError instanceof Error && testError.code === -32000) {
+        console.log(chalk.green('✅ Error handling compliance'));
+        passed++;
+      } else {
+        console.log(chalk.red('❌ Error handling compliance failed'));
+        failed++;
+      }
+    } else {
+      console.log(chalk.red('❌ Error handling method missing'));
+      failed++;
+    }
+
   } catch (error) {
-    console.log(chalk.red(`❌ MCP Server creation test failed: ${error.message}`));
+    console.log(chalk.red(`❌ MCP Server compliance test failed: ${error.message}`));
     failed++;
   }
 
   console.log();
 
-  // Test 3: Claude Desktop Config Generation
+  // Test 3: Logging Capability
   try {
-    console.log(chalk.yellow('Test 3: Claude Desktop Config Generation'));
+    console.log(chalk.yellow('Test 3: Logging Capability'));
+
+    const testConfig = {
+      proxyUrl: 'https://mcp.uruenterprises.com',
+      token: 'test-token',
+      debug: true,
+      timeout: 5000
+    };
+
+    const server = new UruMCPServer(testConfig);
+
+    // Test logging method with different levels
+    if (typeof server.log === 'function') {
+      // This should not throw an error
+      server.log('Test info message', 'info');
+      server.log('Test warning message', 'warning');
+      server.log('Test error message', 'error');
+      console.log(chalk.green('✅ Logging capability works'));
+      passed++;
+    } else {
+      console.log(chalk.red('❌ Logging method missing'));
+      failed++;
+    }
+
+  } catch (error) {
+    console.log(chalk.red(`❌ Logging capability test failed: ${error.message}`));
+    failed++;
+  }
+
+  console.log();
+
+  // Test 4: Claude Desktop Config Generation
+  try {
+    console.log(chalk.yellow('Test 4: Claude Desktop Config Generation'));
     
     const configManager = new ConfigManager();
     const claudeConfig = configManager.getClaudeDesktopConfig();
