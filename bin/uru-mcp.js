@@ -23,7 +23,7 @@ const program = new Command();
 program
   .name('uru-mcp')
   .description('Standalone MCP server for Uru Platform integration with Claude Desktop')
-  .version('1.1.1')
+  .version('1.1.2')
   .option('-t, --token <token>', 'Authentication token')
   .option('-d, --debug', 'Enable debug mode')
   .option('--setup', 'Run interactive setup wizard')
