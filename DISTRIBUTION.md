@@ -1,14 +1,14 @@
-# Uru MCP Proxy - Distribution Guide
+# Uru MCP - Distribution Guide
 
-This document outlines how to distribute and publish the Uru MCP Proxy package.
+This document outlines how to distribute and publish the Uru MCP package.
 
 ## 📦 Package Overview
 
-The Uru MCP Proxy is now a standalone, distributable npm package that allows users to easily connect Claude Desktop to the Uru Platform with minimal configuration.
+The Uru MCP is now a standalone, distributable npm package that allows users to easily connect Claude Desktop to the Uru Platform with minimal configuration.
 
 ### Key Features
 
-- **Single Command Installation**: `npx uru-mcp-proxy --setup`
+- **Single Command Installation**: `npx uru-mcp --setup`
 - **Minimal Configuration**: Only requires authentication token
 - **Fixed Proxy URL**: Always connects to `https://mcp.uruenterprises.com`
 - **Interactive Setup**: Guided configuration wizard
@@ -21,7 +21,6 @@ The Uru MCP Proxy is now a standalone, distributable npm package that allows use
 
 1. **Prepare for publishing:**
    ```bash
-   cd mcp-proxy/claude-desktop
    npm install
    npm run test
    ```
@@ -34,7 +33,7 @@ The Uru MCP Proxy is now a standalone, distributable npm package that allows use
 
 3. **Users can then install with:**
    ```bash
-   npx uru-mcp-proxy --setup
+   npx uru-mcp --setup
    ```
 
 ### Method 2: GitHub Packages
@@ -57,28 +56,15 @@ The Uru MCP Proxy is now a standalone, distributable npm package that allows use
 
 Users can run directly from the repository:
 ```bash
-npx github:JaxMoss/uru-workspace-platform/mcp-proxy/claude-desktop
+npx github:kkdraganov/Uru-MCP
 ```
-
-## 🔧 Pre-Distribution Checklist
-
-- [x] Package structure validated
-- [x] All required files present
-- [x] Configuration simplified (token-only)
-- [x] CLI interface complete
-- [x] Error handling implemented
-- [x] Documentation written
-- [x] License included
-- [ ] Dependencies installed and tested
-- [ ] Integration testing with Claude Desktop
-- [ ] Version number finalized
 
 ## 📋 User Experience Flow
 
-1. **Installation**: `npx uru-mcp-proxy --setup`
+1. **Installation**: `npx uru-mcp --setup`
 2. **Configuration**: Enter authentication token
-3. **Testing**: `npx uru-mcp-proxy --test`
-4. **Claude Setup**: `npx uru-mcp-proxy --claude-config`
+3. **Testing**: `npx uru-mcp --test`
+4. **Claude Setup**: `npx uru-mcp --claude-config`
 5. **Usage**: Add to Claude Desktop and start using
 
 ## 🛠️ Maintenance
@@ -104,14 +90,8 @@ npm audit fix
 ### For End Users
 
 - **README.md**: Complete installation and usage guide
-- **CLI Help**: `npx uru-mcp-proxy --help`
-- **Interactive Setup**: `npx uru-mcp-proxy --setup`
-
-### For Developers
-
-- **DISTRIBUTION.md**: This file
-- **validate.js**: Package structure validation
-- **test.js**: Functionality testing
+- **CLI Help**: `npx uru-mcp --help`
+- **Interactive Setup**: `npx uru-mcp --setup`
 
 ## 🔒 Security Considerations
 
@@ -141,8 +121,8 @@ Consider adding:
 
 For contributors:
 1. Fork the repository
-2. Make changes in `mcp-proxy/claude-desktop/`
-3. Run `node validate.js` to check structure
+2. Make changes to the codebase
+3. Run `npm test` to check functionality
 4. Submit pull request
 
 ## 📞 Support Channels

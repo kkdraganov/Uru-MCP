@@ -43,8 +43,6 @@ This will guide you through configuring:
 - Authentication token (required)
 - Debug mode preferences
 
-Proxy URL is fixed at: `https://mcp.uruenterprises.com`
-
 ### Method 2: Environment Variables
 
 ```bash
@@ -128,14 +126,11 @@ npx uru-mcp --help
 | `--token` | `URU_TOKEN` | Authentication token |
 | `--debug` | `URU_DEBUG` | Enable debug logging |
 
-Proxy URL is fixed at: `https://mcp.uruenterprises.com`
-
 ## 🔍 Troubleshooting
 
 ### Common Issues
 
 **❌ "Cannot connect to proxy"**
-- Check if the proxy URL is correct
 - Verify your internet connection
 - Test with: `npx uru-mcp --test`
 
@@ -150,8 +145,7 @@ Proxy URL is fixed at: `https://mcp.uruenterprises.com`
 - Verify the server is running: `npx uru-mcp --test`
 
 **❌ "Proxy endpoint not found"**
-- Your proxy may not support MCP functionality
-- Check if you're using the correct proxy URL
+- The proxy may be offline
 - Contact your administrator
 
 ### Debug Mode
@@ -182,38 +176,17 @@ URU_DEBUG=true npx uru-mcp
 
 ## 📚 Advanced Usage
 
-### Custom Configuration File
+### Configuration File
 
-Create a custom configuration file:
+The Uru MCP server automatically creates and manages a configuration file at `~/.uru-mcp.json` when you run the setup wizard. This file stores your authentication token and debug preferences.
+
+You can manually edit this file if needed:
 
 ```json
 {
-  "backendUrl": "https://api.uruenterprises.com",
-  "token": "your-token-here",
-  "debug": false,
-  "timeout": 30000,
-  "retries": 3
+  "token": "your-auth-token-here",
+  "debug": false
 }
-```
-
-Use it with:
-```bash
-npx uru-mcp --config /path/to/config.json
-```
-
-### Multiple Environments
-
-Set up different configurations for different environments:
-
-```bash
-# Development
-URU_BACKEND_URL=http://localhost:8000 npx uru-mcp
-
-# Staging
-URU_BACKEND_URL=https://staging-api.uruenterprises.com npx uru-mcp
-
-# Production
-URU_BACKEND_URL=https://api.uruenterprises.com npx uru-mcp
 ```
 
 ## 🤝 Support
@@ -224,7 +197,7 @@ URU_BACKEND_URL=https://api.uruenterprises.com npx uru-mcp
 
 ## 📄 License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+Apache License 2.0 - see [LICENSE](LICENSE) file for details.
 
 ---
 
