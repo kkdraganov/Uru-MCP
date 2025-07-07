@@ -1,79 +1,25 @@
 # Uru MCP
 
-A standalone MCP (Model Context Protocol) server that connects Claude Desktop to the Uru Platform, enabling seamless access to Uru's AI tools and capabilities directly within Claude Desktop.
+A Model Context Protocol (MCP) server that provides AI assistants with access to Uru Platform capabilities and tools.
 
-## 🚀 Quick Start
+## Overview
 
-### Installation & Setup
+**Uru MCP** enables AI assistants to work directly with Uru Platform services through the Model Context Protocol. The server provides a standardized interface for accessing Uru's AI tools and capabilities.
 
-1. **Install and configure in one command:**
-   ```bash
-   npx uru-mcp --setup
-   ```
+The server works with MCP client applications such as [Claude Desktop](https://claude.ai/download), [VS Code](https://code.visualstudio.com/docs/copilot/chat/mcp-servers), [Cursor](https://www.cursor.com/), and other MCP-compatible clients.
 
-2. **Test your connection:**
-   ```bash
-   npx uru-mcp --test
-   ```
+## ⚡ Quick Start
 
-3. **Get Claude Desktop configuration:**
-   ```bash
-   npx uru-mcp --claude-config
-   ```
-
-4. **Add to Claude Desktop** (see [Claude Desktop Setup](#claude-desktop-setup) below)
-
-5. **Start using Uru tools in Claude Desktop!**
-
-## 📋 Requirements
+### Prerequisites
 
 - **Node.js 18+** (required)
-- **Claude Desktop** (for MCP integration)
 - **Uru Platform authentication token** (required)
 
-## 🔧 Configuration
+### 1. Install MCP Server
 
-### Method 1: Interactive Setup (Recommended)
+Add the server configuration to your MCP settings file. MCP servers can be installed manually or at runtime via npx (recommended):
 
-```bash
-npx uru-mcp --setup
-```
-
-This will guide you through configuring:
-- Authentication token (required)
-- Debug mode preferences
-
-### Method 2: Environment Variables
-
-```bash
-export URU_TOKEN="your-auth-token-here"
-export URU_DEBUG="false"
-```
-
-### Method 3: Command Line Options
-
-```bash
-npx uru-mcp --token your-auth-token-here
-```
-
-## 🖥️ Claude Desktop Setup
-
-### Step 1: Get Configuration
-
-Run this command to see the exact configuration for your setup:
-
-```bash
-npx uru-mcp --claude-config
-```
-
-### Step 2: Add to Claude Desktop
-
-1. **Find your Claude Desktop config file:**
-   - **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
-   - **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
-   - **Linux:** `~/.config/Claude/claude_desktop_config.json`
-
-2. **Add the MCP server configuration:**
+#### Configure for npx (recommended)
 
 ```json
 {
@@ -89,16 +35,218 @@ npx uru-mcp --claude-config
 }
 ```
 
-3. **Restart Claude Desktop**
+### 2. Test the Installation
 
-### Step 3: Verify Integration
+Ask your AI client: "Please list available Uru tools" or run the test command:
 
-1. Open Claude Desktop
-2. Start a new conversation
-3. Look for Uru tools in the available tools list
-4. Try using a tool to confirm everything works
+```bash
+npx uru-mcp --test
+```
 
-## 🛠️ Usage
+## 🛠️ Setup & Configuration
+
+### 1. Authentication
+
+Obtain your Uru Platform authentication token and configure it using one of these methods:
+
+#### Method 1: Interactive Setup (Recommended)
+
+```bash
+npx uru-mcp --setup
+```
+
+This will guide you through configuring:
+- Authentication token (required)
+- Debug mode preferences
+
+#### Method 2: Environment Variables
+
+```bash
+export URU_TOKEN="your-auth-token-here"
+export URU_DEBUG="false"
+```
+
+#### Method 3: Command Line Options
+
+```bash
+npx uru-mcp --token your-auth-token-here
+```
+
+### 2. Environment Variables
+
+#### Required
+
+- `URU_TOKEN`: Uru Platform authentication token (required)
+
+#### Optional
+
+- `URU_DEBUG`: Enable debug mode (`true` or `false`, defaults to `false`)
+
+### 3. Client Integration
+
+#### Claude Desktop
+
+Edit: `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
+Edit: `%APPDATA%\Claude\claude_desktop_config.json` (Windows)
+Edit: `~/.config/Claude/claude_desktop_config.json` (Linux)
+
+```json
+{
+  "mcpServers": {
+    "uru": {
+      "command": "npx",
+      "args": ["uru-mcp"],
+      "env": {
+        "URU_TOKEN": "your-auth-token-here"
+      }
+    }
+  }
+}
+```
+
+#### VS Code / Cursor
+
+For VS Code with MCP extensions or Cursor, add to your MCP configuration file:
+
+```json
+{
+  "uru": {
+    "command": "npx",
+    "args": ["uru-mcp"],
+    "env": {
+      "URU_TOKEN": "your-auth-token-here"
+    }
+  }
+}
+```
+
+## 📡 STDIO Interface
+
+The Uru MCP server implements the Model Context Protocol over STDIO transport, enabling communication with any MCP-compatible client.
+
+### Command-Line Usage
+
+```bash
+# Start the server (typically called by MCP clients)
+npx uru-mcp
+
+# With environment variables
+URU_TOKEN="your-token" npx uru-mcp
+
+# With debug mode
+URU_DEBUG=true npx uru-mcp
+```
+
+### JSON-RPC Message Format
+
+The server uses JSON-RPC 2.0 over STDIO. All communication follows the MCP specification.
+
+#### Server Information
+
+```json
+{
+  "name": "uru-mcp",
+  "version": "1.1.2",
+  "title": "Uru Platform MCP Server",
+  "description": "Model Context Protocol server providing access to Uru Platform AI tools and capabilities"
+}
+```
+
+#### Available Methods
+
+##### tools/list - List Available Tools
+
+**Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/list",
+  "params": {}
+}
+```
+
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "tools": [
+      {
+        "name": "tool_name",
+        "description": "Tool description",
+        "inputSchema": {
+          "type": "object",
+          "properties": { ... },
+          "required": [ ... ]
+        }
+      }
+    ]
+  }
+}
+```
+
+##### tools/call - Execute a Tool
+
+**Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "method": "tools/call",
+  "params": {
+    "name": "tool_name",
+    "arguments": {
+      "param1": "value1",
+      "param2": "value2"
+    }
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Tool execution result"
+      }
+    ]
+  }
+}
+```
+
+### Error Handling
+
+The server returns standard JSON-RPC 2.0 error responses:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "error": {
+    "code": -32001,
+    "message": "Authentication failed",
+    "data": {
+      "suggestion": "Check your URU_TOKEN environment variable"
+    }
+  }
+}
+```
+
+**Common Error Codes:**
+- `-32001`: Authentication failed
+- `-32002`: Access forbidden
+- `-32003`: Cannot connect to Uru Platform
+- `-32601`: Tool not found
+- `-32602`: Invalid parameters
+
+## 🛠️ CLI Usage
 
 ### Available Commands
 
@@ -109,7 +257,7 @@ npx uru-mcp --setup
 # Test connection to backend
 npx uru-mcp --test
 
-# Show Claude Desktop configuration
+# Show MCP client configuration examples
 npx uru-mcp --claude-config
 
 # Start server with custom settings
@@ -130,25 +278,38 @@ npx uru-mcp --help
 
 ### Common Issues
 
+#### Connection Issues
+
 **❌ "Cannot connect to proxy"**
 - Verify your internet connection
 - Test with: `npx uru-mcp --test`
+- Check if `https://mcp.uruenterprises.com` is accessible
 
 **❌ "Authentication failed"**
 - Verify your token is correct and hasn't expired
 - Check if your token has the required permissions
 - Reconfigure with: `npx uru-mcp --setup`
 
-**❌ "Tools not appearing in Claude Desktop"**
-- Restart Claude Desktop after configuration changes
-- Check the MCP server configuration in Claude Desktop
-- Verify the server is running: `npx uru-mcp --test`
-
 **❌ "Proxy endpoint not found"**
-- The proxy may be offline
-- Contact your administrator
+- The Uru Platform service may be offline
+- Contact your administrator or check service status
 
-### Debug Mode
+#### MCP Client Integration Issues
+
+**❌ "Tools not appearing in MCP client"**
+- Restart your MCP client after configuration changes
+- Check the MCP server configuration in your client
+- Verify the server is running: `npx uru-mcp --test`
+- Ensure the `URU_TOKEN` environment variable is set correctly
+
+**❌ "Server startup failures"**
+- Check that Node.js 18+ is installed
+- Verify the authentication token is provided
+- Enable debug mode for detailed error information
+
+### Debugging
+
+#### Enable Debug Mode
 
 Enable debug mode for detailed logging:
 
@@ -158,21 +319,63 @@ npx uru-mcp --debug
 
 # Via environment variable
 URU_DEBUG=true npx uru-mcp
+
+# In MCP client configuration
+{
+  "uru": {
+    "command": "npx",
+    "args": ["uru-mcp"],
+    "env": {
+      "URU_TOKEN": "your-token",
+      "URU_DEBUG": "true"
+    }
+  }
+}
 ```
 
-### Getting Help
+#### Testing and Validation
 
-1. **Check configuration:** `npx uru-mcp --claude-config`
-2. **Test connection:** `npx uru-mcp --test`
+1. **Test connection:** `npx uru-mcp --test`
+2. **View configuration examples:** `npx uru-mcp --claude-config`
 3. **View help:** `npx uru-mcp --help`
-4. **Enable debug mode:** `npx uru-mcp --debug`
+4. **Run comprehensive tests:** `node test_client.js --token YOUR_TOKEN`
 
-## 🔒 Security
+## 💻 Developer Guide
 
-- **Tokens:** Never commit authentication tokens to version control
-- **Environment Variables:** Use environment variables for sensitive data
-- **Network:** Ensure your proxy uses HTTPS in production
-- **Permissions:** Only grant necessary permissions to authentication tokens
+### Installation & Building
+
+```bash
+git clone https://github.com/kkdraganov/Uru-MCP
+cd Uru-MCP
+npm install
+npm run start
+```
+
+### Running Tests
+
+```bash
+# Run comprehensive test suite
+node test_client.js --token YOUR_TOKEN
+
+# Run with debug logging
+node test_client.js --token YOUR_TOKEN --debug
+
+# Focus on MCP protocol compliance
+node test_client.js --token YOUR_TOKEN --test-mode integration
+```
+
+### Project Structure
+
+```
+├── index.js                 # Main entry point
+├── bin/uru-mcp.js           # CLI entry point
+├── lib/
+│   ├── mcp-server.js        # Core MCP server implementation
+│   ├── config-manager.js    # Configuration management
+│   └── error-handler.js     # Error handling utilities
+├── test_client.js           # Comprehensive test suite
+└── README.md               # Documentation
+```
 
 ## 📚 Advanced Usage
 
@@ -189,11 +392,33 @@ You can manually edit this file if needed:
 }
 ```
 
+### Custom Integration
+
+For custom MCP client integration, the server supports:
+
+- **Transport:** STDIO (standard input/output)
+- **Protocol:** JSON-RPC 2.0
+- **Capabilities:** Tools (with listChanged support), Logging
+- **Authentication:** Bearer token via environment variables
+
+## 🔒 Security
+
+- **Tokens:** Never commit authentication tokens to version control
+- **Environment Variables:** Use environment variables for sensitive data
+- **Network:** All communication uses HTTPS with the Uru Platform
+- **Permissions:** Only grant necessary permissions to authentication tokens
+
 ## 🤝 Support
 
 - **Documentation:** [GitHub Repository](https://github.com/kkdraganov/Uru-MCP)
 - **Issues:** [Report Issues](https://github.com/kkdraganov/Uru-MCP/issues)
 - **Discussions:** [GitHub Discussions](https://github.com/kkdraganov/Uru-MCP/discussions)
+
+## 🔗 Related Resources
+
+- [Model Context Protocol Documentation](https://github.com/modelcontextprotocol)
+- [Uru Platform Documentation](https://uruenterprises.com)
+- [MCP Server Examples](https://github.com/modelcontextprotocol/servers)
 
 ## 📄 License
 

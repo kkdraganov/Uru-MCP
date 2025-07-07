@@ -4,16 +4,17 @@ This document outlines how to distribute and publish the Uru MCP package.
 
 ## 📦 Package Overview
 
-The Uru MCP is now a standalone, distributable npm package that allows users to easily connect Claude Desktop to the Uru Platform with minimal configuration.
+The Uru MCP is a standalone, distributable npm package that provides a Model Context Protocol (MCP) server for Uru Platform integration. It allows MCP clients to easily connect to the Uru Platform with minimal configuration.
 
 ### Key Features
 
 - **Single Command Installation**: `npx uru-mcp --setup`
 - **Minimal Configuration**: Only requires authentication token
-- **Fixed Proxy URL**: Always connects to `https://mcp.uruenterprises.com`
+- **MCP Protocol Compliance**: Full JSON-RPC 2.0 over STDIO support
 - **Interactive Setup**: Guided configuration wizard
 - **Comprehensive Error Handling**: User-friendly error messages
-- **Claude Desktop Integration**: Automatic configuration generation
+- **Multi-Client Support**: Works with Claude Desktop, VS Code, Cursor, and other MCP clients
+- **Fixed Backend URL**: Always connects to `https://mcp.uruenterprises.com`
 
 ## 🚀 Distribution Methods
 

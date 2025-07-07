@@ -22,25 +22,29 @@ const program = new Command();
 
 program
   .name('uru-mcp')
-  .description('Standalone MCP server for Uru Platform integration with Claude Desktop')
-  .version('1.1.2')
+  .description('Model Context Protocol (MCP) server for Uru Platform integration')
+  .version('1.1.3')
   .option('-t, --token <token>', 'Authentication token')
   .option('-d, --debug', 'Enable debug mode')
   .option('--setup', 'Run interactive setup wizard')
   .option('--test', 'Test connection to backend')
-  .option('--claude-config', 'Show Claude Desktop configuration example')
+  .option('--claude-config', 'Show MCP client configuration examples')
   .addHelpText('after', `
 Examples:
   $ npx uru-mcp --setup                    # Interactive setup
   $ npx uru-mcp --test                     # Test connection
-  $ npx uru-mcp --claude-config            # Show Claude config
-  $ npx uru-mcp --token your-token-here    # Start with token
+  $ npx uru-mcp --claude-config            # Show MCP client config
+  $ npx uru-mcp --token your-token-here    # Start MCP server
 
 Environment Variables:
   URU_TOKEN          Authentication token (required)
   URU_DEBUG          Enable debug mode (true/false)
 
-Proxy URL: https://mcp.uruenterprises.com (fixed)
+MCP Protocol:
+  Transport: STDIO (JSON-RPC 2.0)
+  Capabilities: Tools, Logging
+  Backend: https://mcp.uruenterprises.com
+
 For more help: https://github.com/kkdraganov/Uru-MCP`)
   .parse();
 
@@ -178,10 +182,12 @@ async function testConnection() {
 }
 
 function showClaudeConfig() {
-  console.log(chalk.yellow('📋 Claude Desktop Configuration\n'));
+  console.log(chalk.yellow('📋 MCP Client Configuration Examples\n'));
+
+  console.log(chalk.cyan.bold('Claude Desktop:'));
   console.log('Add this to your Claude Desktop MCP settings:\n');
 
-  const configExample = {
+  const claudeConfigExample = {
     "mcpServers": {
       "uru": {
         "command": "npx",
@@ -193,12 +199,27 @@ function showClaudeConfig() {
     }
   };
 
-  console.log(chalk.cyan(JSON.stringify(configExample, null, 2)));
+  console.log(chalk.cyan(JSON.stringify(claudeConfigExample, null, 2)));
   console.log();
-  console.log(chalk.gray('Configuration file location:'));
+  console.log(chalk.gray('Claude Desktop config file locations:'));
   console.log(chalk.gray('• macOS: ~/Library/Application Support/Claude/claude_desktop_config.json'));
   console.log(chalk.gray('• Windows: %APPDATA%\\Claude\\claude_desktop_config.json'));
   console.log(chalk.gray('• Linux: ~/.config/Claude/claude_desktop_config.json'));
+
+  console.log(chalk.cyan.bold('\nOther MCP Clients:'));
+  console.log('For VS Code, Cursor, or other MCP clients, use similar configuration:\n');
+
+  const genericConfigExample = {
+    "uru": {
+      "command": "npx",
+      "args": ["uru-mcp"],
+      "env": {
+        "URU_TOKEN": "your-auth-token-here"
+      }
+    }
+  };
+
+  console.log(chalk.cyan(JSON.stringify(genericConfigExample, null, 2)));
 }
 
 // Handle process signals gracefully

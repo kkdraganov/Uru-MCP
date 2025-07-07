@@ -1,6 +1,7 @@
 /**
  * Uru MCP - Main Entry Point
  *
+ * Model Context Protocol (MCP) server for Uru Platform integration.
  * This is the main entry point when the package is run directly
  * (not through the CLI). It starts the MCP server with default configuration.
  */
@@ -21,6 +22,7 @@ async function main() {
     // Validate required configuration
     if (!config.token) {
       console.error('❌ Authentication token is required. Set URU_TOKEN environment variable or run: npx uru-mcp --setup');
+      console.error('   For MCP client configuration examples, run: npx uru-mcp --claude-config');
       process.exit(1);
     }
 
