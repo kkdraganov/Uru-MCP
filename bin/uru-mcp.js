@@ -26,6 +26,7 @@ program
   .version('1.1.3')
   .option('-t, --token <token>', 'Authentication token')
   .option('-d, --debug', 'Enable debug mode')
+  .option('-p, --proxy-url <url>', 'MCP proxy URL (default: https://mcp.uruenterprises.com)')
   .option('--setup', 'Run interactive setup wizard')
   .option('--test', 'Test connection to backend')
   .option('--claude-config', 'Show MCP client configuration examples')
@@ -35,15 +36,17 @@ Examples:
   $ npx uru-mcp --test                     # Test connection
   $ npx uru-mcp --claude-config            # Show MCP client config
   $ npx uru-mcp --token your-token-here    # Start MCP server
+  $ npx uru-mcp --proxy-url http://localhost:3001  # Use development proxy
 
 Environment Variables:
   URU_TOKEN          Authentication token (required)
   URU_DEBUG          Enable debug mode (true/false)
+  URU_PROXY_URL      MCP proxy URL (default: https://mcp.uruenterprises.com)
 
 MCP Protocol:
   Transport: STDIO (JSON-RPC 2.0)
   Capabilities: Tools, Logging
-  Backend: https://mcp.uruenterprises.com
+  Backend: Configurable (production or development)
 
 For more help: https://github.com/kkdraganov/Uru-MCP`)
   .parse();

@@ -81,6 +81,7 @@ npx uru-mcp --token your-auth-token-here
 #### Optional
 
 - `URU_DEBUG`: Enable debug mode (`true` or `false`, defaults to `false`)
+- `URU_PROXY_URL`: MCP proxy URL (defaults to `https://mcp.uruenterprises.com`, use `http://localhost:3001` for development)
 
 ### 3. Client Integration
 
@@ -135,6 +136,12 @@ URU_TOKEN="your-token" npx uru-mcp
 
 # With debug mode
 URU_DEBUG=true npx uru-mcp
+
+# With development proxy
+URU_PROXY_URL="http://localhost:3001" npx uru-mcp
+
+# With CLI options
+npx uru-mcp --proxy-url http://localhost:3001 --debug
 ```
 
 ### JSON-RPC Message Format
