@@ -21,7 +21,7 @@ async function main() {
 
     // Validate required configuration
     if (!config.token) {
-      console.error('❌ Authentication token is required. Set URU_TOKEN environment variable or run: npx uru-mcp --setup');
+      console.error('❌ Authentication token is required. Set URU_API_KEY environment variable or run: npx uru-mcp --setup');
       console.error('   For MCP client configuration examples, run: npx uru-mcp --claude-config');
       process.exit(1);
     }
