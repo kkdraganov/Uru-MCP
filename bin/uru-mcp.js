@@ -23,7 +23,7 @@ const program = new Command();
 program
   .name('uru-mcp')
   .description('Model Context Protocol (MCP) server for Uru Platform integration')
-  .version('2.1.1')
+  .version('2.1.0')
   .option('-t, --token <token>', 'Authentication token')
   .option('-d, --debug', 'Enable debug mode')
   .option('-p, --proxy-url <url>', 'MCP proxy URL (default: https://mcp.uruenterprises.com)')

@@ -1,6 +1,6 @@
 {
   "name": "uru-mcp",
-  "version": "2.1.1",
+  "version": "2.1.0",
   "description": "Model Context Protocol (MCP) server for Uru Platform integration",
   "main": "index.js",
   "bin": {
