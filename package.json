@@ -1,7 +1,7 @@
 {
   "name": "uru-mcp",
-  "version": "2.2.0",
-  "description": "Model Context Protocol (MCP) server for Uru Platform integration",
+  "version": "3.0.0",
+  "description": "MCP-compliant server with hierarchical tool namespacing for Uru Platform integration",
   "main": "index.js",
   "bin": {
     "uru-mcp": "./bin/uru-mcp.js"
@@ -15,10 +15,12 @@
     "mcp",
     "claude",
     "uru",
-    "proxy",
+    "hierarchical",
+    "namespace",
     "ai",
     "tools",
-    "desktop"
+    "desktop",
+    "protocol-compliant"
   ],
   "author": "Uru Enterprises LLC",
   "license": "Apache-2.0",

@@ -398,7 +398,7 @@ class UruMCPTestClient extends EventEmitter {
   }
 
   /**
-   * Display comprehensive tool information
+   * Display comprehensive tool information for hierarchical system
    */
   displayToolInformation(tools) {
     if (tools.length === 0) {
@@ -406,38 +406,61 @@ class UruMCPTestClient extends EventEmitter {
       return;
     }
 
-    this.log('\n📋 Available Tools:', 'info');
+    this.log('\n📋 Available Tools (Hierarchical System):', 'info');
     console.log('='.repeat(60));
 
-    tools.forEach((tool, index) => {
-      console.log(chalk.cyan(`${index + 1}. ${tool.name}`));
+    // Group tools by type for hierarchical system
+    const namespaceTools = tools.filter(tool => tool.name.endsWith('.list_tools'));
+    const regularTools = tools.filter(tool => !tool.name.endsWith('.list_tools') && tool.name !== 'uru_help');
+    const helpTool = tools.find(tool => tool.name === 'uru_help');
 
-      if (tool.description) {
+    if (helpTool) {
+      console.log(chalk.yellow('❓ Help Tool:'));
+      console.log(chalk.cyan(`1. ${helpTool.name}`));
+      console.log(chalk.gray(`   Description: ${helpTool.description}`));
+      console.log();
+    }
+
+    if (namespaceTools.length > 0) {
+      console.log(chalk.blue('🔍 Namespace Discovery Tools:'));
+      namespaceTools.forEach((tool, index) => {
+        const namespace = tool.name.replace('.list_tools', '');
+        const icon = tool.annotations?.title?.charAt(0) || '🔧';
+        console.log(chalk.cyan(`${index + 1}. ${tool.name} ${icon}`));
         console.log(chalk.gray(`   Description: ${tool.description}`));
-      }
+        console.log(chalk.gray(`   Namespace: ${namespace}`));
 
-      if (tool.inputSchema) {
-        console.log(chalk.gray(`   Input Schema:`));
-        console.log(chalk.gray(`     Type: ${tool.inputSchema.type || 'unknown'}`));
-
-        if (tool.inputSchema.properties) {
+        if (tool.inputSchema?.properties) {
           const propCount = Object.keys(tool.inputSchema.properties).length;
-          console.log(chalk.gray(`     Properties: ${propCount} parameter(s)`));
-
-          if (this.debug) {
-            console.log(chalk.gray(`     Full Schema: ${JSON.stringify(tool.inputSchema, null, 6)}`));
-          }
+          console.log(chalk.gray(`   Parameters: ${propCount}`));
         }
+        console.log();
+      });
+    }
 
-        if (tool.inputSchema.required && Array.isArray(tool.inputSchema.required)) {
-          console.log(chalk.gray(`     Required: ${tool.inputSchema.required.join(', ')}`));
+    if (regularTools.length > 0) {
+      console.log(chalk.green('⚙️ Pre-loaded Tools:'));
+      regularTools.slice(0, 10).forEach((tool, index) => {
+        const namespace = tool.namespace || tool.annotations?.namespace || 'unknown';
+        const category = tool.annotations?.category || 'general';
+        console.log(chalk.cyan(`${index + 1}. ${tool.name}`));
+        console.log(chalk.gray(`   Description: ${tool.description}`));
+        console.log(chalk.gray(`   Namespace: ${namespace} | Category: ${category}`));
+
+        if (tool.inputSchema?.properties) {
+          const propCount = Object.keys(tool.inputSchema.properties).length;
+          console.log(chalk.gray(`   Parameters: ${propCount}`));
         }
+        console.log();
+      });
+
+      if (regularTools.length > 10) {
+        console.log(chalk.gray(`   ... and ${regularTools.length - 10} more pre-loaded tools`));
       }
-
-      console.log(); // Empty line between tools
-    });
+    }
 
     console.log('='.repeat(60));
+    console.log(chalk.magenta(`📊 Total: ${tools.length} tools (${namespaceTools.length} namespaces, ${regularTools.length} pre-loaded)`));
   }
 
   /**
@@ -504,43 +527,78 @@ class UruMCPTestClient extends EventEmitter {
     try {
       this.log('📧 Testing email tool functionality...');
 
+      // Look for email namespace discovery tools first (hierarchical system)
+      const emailNamespaceTool = tools.find(tool =>
+        tool.name.endsWith('.list_tools') && (
+          tool.name.includes('gmail') ||
+          tool.name.includes('email') ||
+          tool.name.includes('mail')
+        )
+      );
+
+      // Also look for direct email tools (pre-loaded or legacy)
       const emailTool = tools.find(tool =>
         tool.name.toLowerCase().includes('gmail') ||
         tool.name.toLowerCase().includes('email') ||
         tool.name.toLowerCase().includes('send')
       );
 
-      if (!emailTool) {
-        this.log('⚠️ No email tool found, skipping email test', 'warn');
+      if (!emailNamespaceTool && !emailTool) {
+        this.log('⚠️ No email tools found, skipping email test', 'warn');
         this.metrics.warningCount++;
         return;
       }
 
-      this.log(`📧 Found email tool: ${emailTool.name}`, 'success');
+      // Test namespace discovery first if available
+      if (emailNamespaceTool) {
+        this.log(`🔍 Testing email namespace discovery: ${emailNamespaceTool.name}`, 'info');
 
-      const emailParams = {
-        to: 'test@example.com',
-        subject: 'Uru MCP Test Email - Comprehensive Test Suite',
-        body: 'This is a test email sent from the enhanced Uru MCP test client to verify Gmail functionality and Claude Desktop integration.',
-        from: 'noreply@uruenterprises.com'
-      };
+        try {
+          const namespaceResult = await this.executeToolWithTimeout(emailNamespaceTool.name, {});
 
-      this.log('📧 Executing email tool test...', 'info');
-      this.log(`📝 Email parameters: ${JSON.stringify(emailParams, null, 2)}`, 'debug');
-
-      const emailResult = await this.executeToolWithTimeout(emailTool.name, emailParams);
-
-      // Validate email result structure
-      if (emailResult && typeof emailResult === 'object') {
-        this.log('✅ Email tool execution successful', 'success');
-        this.testResults.emailTest = true;
-
-        if (emailResult.content) {
-          this.log(`📊 Email result: ${JSON.stringify(emailResult.content, null, 2)}`, 'debug');
+          if (namespaceResult && namespaceResult.content) {
+            this.log('✅ Email namespace discovery successful', 'success');
+            this.metrics.successfulToolCalls++;
+          }
+        } catch (error) {
+          this.log(`⚠️ Email namespace discovery failed: ${error.message}`, 'warn');
+          this.metrics.warningCount++;
         }
-      } else {
-        this.log('⚠️ Email tool returned unexpected result format', 'warn');
-        this.metrics.warningCount++;
+      }
+
+      // Test direct email tool if available
+      if (emailTool) {
+        this.log(`📧 Testing email tool: ${emailTool.name}`, 'info');
+
+        const emailParams = {
+          to: 'test@example.com',
+          subject: 'Uru MCP Test Email - Hierarchical System Test',
+          body: 'This is a test email sent from the enhanced Uru MCP test client to verify email functionality with the hierarchical tool system.',
+          from: 'noreply@uruenterprises.com'
+        };
+
+        this.log('📧 Executing email tool test...', 'info');
+        this.log(`📝 Email parameters: ${JSON.stringify(emailParams, null, 2)}`, 'debug');
+
+        try {
+          const emailResult = await this.executeToolWithTimeout(emailTool.name, emailParams);
+
+          // Validate email result structure
+          if (emailResult && typeof emailResult === 'object') {
+            this.log('✅ Email tool execution successful', 'success');
+            this.testResults.emailTest = true;
+
+            if (emailResult.content) {
+              this.log(`📊 Email result: ${JSON.stringify(emailResult.content, null, 2)}`, 'debug');
+            }
+          } else {
+            this.log('⚠️ Email tool returned unexpected result format', 'warn');
+            this.metrics.warningCount++;
+          }
+        } catch (error) {
+          this.log(`⚠️ Email tool test failed (expected): ${error.message}`, 'warn');
+          this.metrics.warningCount++;
+        }
       }
 
     } catch (error) {

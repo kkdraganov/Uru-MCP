@@ -1,104 +1,132 @@
 # Uru MCP
 
-A Model Context Protocol (MCP) server that provides AI assistants with access to Uru Platform capabilities and tools through an intelligent two-tier discovery system.
+A Model Context Protocol (MCP) server that provides AI assistants with access to Uru Platform capabilities through a hierarchical tool namespace system that efficiently manages 400+ tools while maintaining full MCP protocol compliance.
 
 ## Overview
 
-**Uru MCP** enables AI assistants to work directly with Uru Platform services through the Model Context Protocol. The server provides a standardized interface for accessing Uru's AI tools and capabilities via an innovative two-tier tool discovery system that efficiently manages 400+ available tools.
+**Uru MCP** enables AI assistants to work directly with Uru Platform services through the Model Context Protocol. The server provides a standardized, MCP-compliant interface for accessing Uru's AI tools and capabilities via an innovative hierarchical tool namespace system.
 
-The server works with MCP client applications such as [Claude Desktop](https://claude.ai/download), [VS Code](https://code.visualstudio.com/docs/copilot/chat/mcp-servers), [Cursor](https://www.cursor.com/), and other MCP-compatible clients.
+The server works seamlessly with MCP client applications such as [Claude Desktop](https://claude.ai/download), [VS Code](https://code.visualstudio.com/docs/copilot/chat/mcp-servers), [Cursor](https://www.cursor.com/), and other MCP-compatible clients.
 
-## 🔍 Two-Tier Tool Discovery System
+## 🏗️ Hierarchical Tool Namespace System
 
-The Uru MCP server implements an intelligent two-tier discovery system to efficiently manage the extensive catalog of 400+ available tools without overwhelming MCP clients.
+The Uru MCP server implements a hierarchical tool namespace system that provides full MCP protocol compliance while efficiently managing large tool catalogs without overwhelming clients.
 
 ### System Architecture
 
-**Tier 1: Service Discovery**
-- MCP clients initially see high-level service connections (e.g., "Gmail (Work - Kal)", "COMPANY", "PLATFORM")
-- Each connection represents a specific service integration or account
-- Prevents tool overload while maintaining discoverability
+**Namespace Discovery Tools**
+- Tools ending in `.list_tools` (e.g., `gmail_work_kal.list_tools`, `platform.list_tools`)
+- Each namespace represents a service integration or functional area
+- Provides progressive tool discovery and loading
 
-**Tier 2: Tool Exploration & Execution**
-- Call any service connection to explore its specific tools
-- Direct tool execution by name with automatic routing
-- Dynamic tool loading ensures optimal performance
+**Namespaced Tools**
+- Tools prefixed with namespace (e.g., `gmail_work_kal.send_email`, `platform.manage_users`)
+- Dynamic loading on-demand for optimal performance
+- Intelligent pre-loading for high-priority namespaces
+
+**MCP Protocol Compliance**
+- Standard `tools/list` returns actual executable tools
+- Proper pagination support with `nextCursor`
+- Standard error codes and response formats
+- Full capability declarations
 
 ### How It Works
 
-1. **Discovery Phase**: Call `tools/list` to see available service connections
-2. **Exploration Phase**: Call a service connection tool to see its specific tools
-3. **Execution Phase**: Call specific tools directly by name with parameters
+1. **Discovery Phase**: Call `tools/list` to see namespace discovery tools and pre-loaded tools
+2. **Exploration Phase**: Call namespace discovery tools (e.g., `gmail_work_kal.list_tools`) to load tools in that namespace
+3. **Execution Phase**: Call specific namespaced tools directly (e.g., `gmail_work_kal.send_email`)
 
 ### Example Workflow
 
 ```bash
-# Step 1: Discover available services
-tools/list → ["Gmail (Work - Kal)", "COMPANY", "PLATFORM", "Slack (Team)", ...]
+# Step 1: Discover available namespaces and tools
+tools/list → [gmail_work_kal.list_tools, platform.list_tools, company.list_tools, uru_help, ...]
 
-# Step 2: Explore Gmail tools
-call "Gmail (Work - Kal)" → Lists: GMAIL_SEND_EMAIL, GMAIL_FETCH_EMAILS, etc.
+# Step 2: Explore Gmail namespace
+call gmail_work_kal.list_tools → Loads and displays Gmail tools
 
-# Step 3: Execute specific tool
-call "GMAIL_SEND_EMAIL" with parameters → Email sent via Gmail (Work - Kal)
+# Step 3: Execute specific namespaced tool
+call gmail_work_kal.send_email with parameters → Email sent via Gmail (Work - Kal)
 ```
 
-### Tool Categories
+### Tool Organization
 
-The two-tier system organizes tools into the following categories:
+The hierarchical system organizes tools into the following categories:
 
-**Base MCP Tools**
-- `uru_help`: Interactive help system explaining the two-tier workflow
-- Connection tools for each service integration (dynamically discovered)
+**Discovery Tools**
+- `uru_help` - Get help with the hierarchical tool system
+- `*.list_tools` - Namespace discovery tools (e.g., `gmail_work_kal.list_tools`)
 
-**Uru Platform-Specific Tools** (accessed via service connections)
-- **Email Services**: Gmail, Outlook integration tools
-- **Productivity**: Calendar, Drive, document management tools
-- **Communication**: Slack, Teams, messaging platform tools
-- **Company Tools**: Custom n8n workflows and business processes
-- **Platform Tools**: Core Uru platform capabilities and utilities
+**Namespace Categories**
+- **Communication**: `gmail_work_kal.*`, `outlook_personal.*`, `slack_team.*`
+- **Platform**: `platform.*` - Uru Platform management and administration
+- **Company**: `company.*` - Workflow automation and business processes
+- **Productivity**: `calendar.*`, `drive.*`, `tasks.*`
+- **Development**: `github.*`, `deployment.*`, `monitoring.*`
+
+**Tool Categories by Function**
+- **Communication**: Email, messaging, notifications
+- **Calendar**: Scheduling, meetings, events
+- **Files**: Document management, storage, sharing
+- **Administration**: User management, settings, configuration
+- **Automation**: Workflow automation, integrations
+- **Data**: Analytics, reporting, insights
 
 ### Discovery Process
 
-The tool discovery process follows MCP protocol standards with intelligent caching:
+The hierarchical tool discovery process follows MCP protocol standards with intelligent optimization:
 
 1. **Initial Connection**: MCP client connects to Uru MCP server
-2. **Service Discovery**: Server queries `/list/apps` endpoint to get available service connections
-3. **Connection Tool Creation**: Each service becomes a connection tool in the MCP client
-4. **On-Demand Tool Loading**: When a connection tool is called, server queries `/list/apps/{app_name}/tools`
-5. **Dynamic Execution**: Direct tool calls are routed to the appropriate service automatically
-6. **Intelligent Caching**: Results are cached for 30 seconds to optimize performance
+2. **Namespace Discovery**: Server returns namespace discovery tools and pre-loaded high-priority tools
+3. **Progressive Loading**: Namespace discovery tools (e.g., `gmail_work_kal.list_tools`) load tools on-demand
+4. **Dynamic Registration**: Tools are registered in the dynamic tool registry for efficient access
+5. **Direct Execution**: Namespaced tools are executed directly (e.g., `gmail_work_kal.send_email`)
+6. **Intelligent Caching**: Tools and namespaces are cached with TTL and usage-based optimization
 
 ### Usage Examples
 
-**Email Management Example**
+**Email Management Example (Hierarchical)**
 ```javascript
-// Discover email services
-tools/list → ["Gmail (Work - Kal)", "Outlook (Personal)", ...]
+// Discover namespaces and tools
+tools/list → [gmail_work_kal.list_tools, platform.list_tools, uru_help, ...]
 
-// Explore Gmail capabilities
-call "Gmail (Work - Kal)" → Shows: GMAIL_SEND_EMAIL, GMAIL_FETCH_EMAILS, GMAIL_SEARCH, etc.
+// Explore Gmail namespace
+call gmail_work_kal.list_tools → Loads and displays Gmail tools
 
-// Send an email
-call "GMAIL_SEND_EMAIL" {
+// Send an email using namespaced tool
+call gmail_work_kal.send_email {
   "to": "colleague@company.com",
   "subject": "Project Update",
   "body": "Here's the latest status..."
 }
 ```
 
-**Company Workflow Example**
+**Company Workflow Example (Hierarchical)**
 ```javascript
-// Discover company tools
-tools/list → ["COMPANY", "PLATFORM", ...]
+// Discover available namespaces
+tools/list → [company.list_tools, platform.list_tools, ...]
 
-// Explore company workflows
-call "COMPANY" → Shows: INVOICE_PROCESSOR, CUSTOMER_ONBOARDING, etc.
+// Explore company namespace
+call company.list_tools → Shows: company.process_invoice, company.onboard_customer, etc.
 
-// Execute workflow
-call "INVOICE_PROCESSOR" {
+// Execute workflow using namespaced tool
+call company.process_invoice {
   "invoice_data": {...},
   "approval_required": true
+}
+```
+
+**Multi-Namespace Task Example**
+```javascript
+// Get platform information
+call platform.list_tools → Shows platform management tools
+call platform.get_user_info { "user_id": "123" }
+
+// Send notification about the user
+call gmail_work_kal.send_email {
+  "to": "admin@company.com",
+  "subject": "User Update",
+  "body": "User information has been updated."
 }
 ```
 
