@@ -41,6 +41,7 @@ class UruMCPTestClient extends EventEmitter {
     this.debug = options.debug || false;
     this.timeout = options.timeout || 30000;
     this.testMode = options.testMode || 'comprehensive'; // 'standalone', 'integration', 'comprehensive'
+    this.useLocal = options.local || false;
     this.client = null;
     this.transport = null;
     this.serverProcess = null;
@@ -185,7 +186,7 @@ class UruMCPTestClient extends EventEmitter {
           ...process.env,
           URU_API_KEY: this.key,
           URU_DEBUG: this.debug ? 'true' : 'false',
-          URU_PROXY_URL: 'http://localhost:3001' // Using localhost:3001 for testing
+          URU_PROXY_URL: this.useLocal ? 'https://localhost:3001' : 'https://mcp.uruenterprises.com'
         },
         stderr: 'pipe'
       });
@@ -1090,7 +1091,8 @@ async function runTests(key, options = {}) {
 
     console.log(chalk.cyan(`📋 Test Mode: ${options.testMode || 'comprehensive'}`));
     console.log(chalk.cyan(`🔧 Debug Mode: ${options.debug ? 'enabled' : 'disabled'}`));
-    console.log(chalk.cyan(`⏱️ Timeout: ${options.timeout || 30000}ms\n`));
+    console.log(chalk.cyan(`⏱️ Timeout: ${options.timeout || 30000}ms`));
+    console.log(chalk.cyan(`🌐 Proxy URL: ${options.local ? 'https://localhost:3001' : 'https://mcp.uruenterprises.com'}\n`));
 
     // Phase 1: Connection and Protocol Tests
     console.log(chalk.yellow.bold('📡 PHASE 1: CONNECTION & PROTOCOL VALIDATION'));
@@ -1266,6 +1268,7 @@ function setupCLI() {
     .option('--test-mode <mode>', 'Test mode: standalone, integration, or comprehensive', 'comprehensive')
     .option('--quick', 'Run quick tests only (skip optional features)', false)
     .option('--claude-desktop', 'Focus on Claude Desktop integration tests', false)
+    .option('--local', 'Use https://localhost:3001 for URU_PROXY_URL instead of production URL', false)
     .addHelpText('after', `
 Examples:
   $ node test_client.js --key your-key-here
@@ -1274,6 +1277,7 @@ Examples:
   $ node test_client.js --key your-key-here --test-mode integration
   $ node test_client.js --key your-key-here --claude-desktop
   $ node test_client.js --key your-key-here --quick
+  $ node test_client.js --key your-key-here --local
 
 Test Modes:
   standalone     - Test MCP server functionality in isolation
@@ -1331,7 +1335,8 @@ Make sure the Uru MCP server is properly installed:
         timeout: timeout,
         testMode: testMode,
         quick: options.quick,
-        claudeDesktopFocus: options.claudeDesktop
+        claudeDesktopFocus: options.claudeDesktop,
+        local: options.local
       });
     });
 }
