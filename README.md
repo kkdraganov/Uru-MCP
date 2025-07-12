@@ -153,7 +153,7 @@ The server uses JSON-RPC 2.0 over STDIO. All communication follows the MCP speci
 ```json
 {
   "name": "uru-mcp",
-  "version": "1.1.2",
+      "version": "2.0.0",
   "title": "Uru Platform MCP Server",
   "description": "Model Context Protocol server providing access to Uru Platform AI tools and capabilities"
 }
