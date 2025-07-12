@@ -185,6 +185,7 @@ class UruMCPTestClient extends EventEmitter {
           ...process.env,
           URU_TOKEN: this.token,
           URU_DEBUG: this.debug ? 'true' : 'false'
+          // URU_PROXY_URL: 'http://localhost:3001' // Uncomment to test with local proxy
         },
         stderr: 'pipe'
       });
