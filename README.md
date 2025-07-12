@@ -28,7 +28,7 @@ Add the server configuration to your MCP settings file. MCP servers can be insta
       "command": "npx",
       "args": ["uru-mcp"],
       "env": {
-        "URU_TOKEN": "your-auth-token-here"
+        "URU_API_KEY": "your-auth-token-here"
       }
     }
   }
@@ -62,7 +62,7 @@ This will guide you through configuring:
 #### Method 2: Environment Variables
 
 ```bash
-export URU_TOKEN="your-auth-token-here"
+export URU_API_KEY="your-auth-token-here"
 export URU_DEBUG="false"
 ```
 
@@ -76,7 +76,7 @@ npx uru-mcp --token your-auth-token-here
 
 #### Required
 
-- `URU_TOKEN`: Uru Platform authentication token (required)
+- `URU_API_KEY`: Uru Platform authentication API key (required)
 
 #### Optional
 
@@ -98,7 +98,7 @@ Edit: `~/.config/Claude/claude_desktop_config.json` (Linux)
       "command": "npx",
       "args": ["uru-mcp"],
       "env": {
-        "URU_TOKEN": "your-auth-token-here"
+        "URU_API_KEY": "your-auth-token-here"
       }
     }
   }
@@ -115,7 +115,7 @@ For VS Code with MCP extensions or Cursor, add to your MCP configuration file:
     "command": "npx",
     "args": ["uru-mcp"],
     "env": {
-      "URU_TOKEN": "your-auth-token-here"
+      "URU_API_KEY": "your-auth-token-here"
     }
   }
 }
@@ -132,7 +132,7 @@ The Uru MCP server implements the Model Context Protocol over STDIO transport, e
 npx uru-mcp
 
 # With environment variables
-URU_TOKEN="your-token" npx uru-mcp
+URU_API_KEY="your-token" npx uru-mcp
 
 # With debug mode
 URU_DEBUG=true npx uru-mcp
@@ -240,7 +240,7 @@ The server returns standard JSON-RPC 2.0 error responses:
     "code": -32001,
     "message": "Authentication failed",
     "data": {
-      "suggestion": "Check your URU_TOKEN environment variable"
+      "suggestion": "Check your URU_API_KEY environment variable"
     }
   }
 }
@@ -278,7 +278,7 @@ npx uru-mcp --help
 
 | Option | Environment Variable | Description |
 |--------|---------------------|-------------|
-| `--token` | `URU_TOKEN` | Authentication token |
+| `--token` | `URU_API_KEY` | Authentication token |
 | `--debug` | `URU_DEBUG` | Enable debug logging |
 
 ## 🔍 Troubleshooting
@@ -307,7 +307,7 @@ npx uru-mcp --help
 - Restart your MCP client after configuration changes
 - Check the MCP server configuration in your client
 - Verify the server is running: `npx uru-mcp --test`
-- Ensure the `URU_TOKEN` environment variable is set correctly
+- Ensure the `URU_API_KEY` environment variable is set correctly
 
 **❌ "Server startup failures"**
 - Check that Node.js 18+ is installed
@@ -333,7 +333,7 @@ URU_DEBUG=true npx uru-mcp
     "command": "npx",
     "args": ["uru-mcp"],
     "env": {
-      "URU_TOKEN": "your-token",
+      "URU_API_KEY": "your-token",
       "URU_DEBUG": "true"
     }
   }

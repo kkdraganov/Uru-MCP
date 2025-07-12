@@ -39,7 +39,7 @@ Examples:
   $ npx uru-mcp --proxy-url http://localhost:3001  # Use development proxy
 
 Environment Variables:
-  URU_TOKEN          Authentication token (required)
+  URU_API_KEY        Authentication API key (required)
   URU_DEBUG          Enable debug mode (true/false)
   URU_PROXY_URL      MCP proxy URL (default: https://mcp.uruenterprises.com)
 
@@ -196,7 +196,7 @@ function showClaudeConfig() {
         "command": "npx",
         "args": ["uru-mcp"],
         "env": {
-          "URU_TOKEN": "your-auth-token-here"
+          "URU_API_KEY": "your-auth-token-here"
         }
       }
     }
@@ -217,7 +217,7 @@ function showClaudeConfig() {
       "command": "npx",
       "args": ["uru-mcp"],
       "env": {
-        "URU_TOKEN": "your-auth-token-here"
+        "URU_API_KEY": "your-auth-token-here"
       }
     }
   };

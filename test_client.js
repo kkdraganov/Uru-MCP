@@ -35,9 +35,9 @@ const CLIENT_INFO = {
  * Supports both standalone testing and Claude Desktop integration validation
  */
 class UruMCPTestClient extends EventEmitter {
-  constructor(token, options = {}) {
+  constructor(key, options = {}) {
     super();
-    this.token = token;
+    this.key = key;
     this.debug = options.debug || false;
     this.timeout = options.timeout || 30000;
     this.testMode = options.testMode || 'comprehensive'; // 'standalone', 'integration', 'comprehensive'
@@ -183,9 +183,9 @@ class UruMCPTestClient extends EventEmitter {
         args: MCP_SERVER_ARGS,
         env: {
           ...process.env,
-          URU_TOKEN: this.token,
-          URU_DEBUG: this.debug ? 'true' : 'false'
-          // URU_PROXY_URL: 'http://localhost:3001' // Uncomment to test with local proxy
+          URU_API_KEY: this.key,
+          URU_DEBUG: this.debug ? 'true' : 'false',
+          URU_PROXY_URL: 'http://localhost:3001' // Using localhost:3001 for testing
         },
         stderr: 'pipe'
       });
@@ -556,7 +556,16 @@ class UruMCPTestClient extends EventEmitter {
     try {
       this.log('🔧 Testing general tool execution...');
 
-      const testTool = tools[0];
+      // Prefer Webflow_Tools for testing as it's a simple list operation
+      let testTool = tools.find(tool => tool.name === 'Webflow_Tools');
+      if (!testTool) {
+        // Fallback to Uru_Tools which is also a simple list operation
+        testTool = tools.find(tool => tool.name === 'Uru_Tools');
+      }
+      if (!testTool) {
+        testTool = tools[0]; // Final fallback to first tool
+      }
+
       if (!testTool) {
         throw new Error('No tools available for general testing');
       }
@@ -565,6 +574,14 @@ class UruMCPTestClient extends EventEmitter {
 
       // Generate test parameters based on schema
       const testParams = this.generateTestParameters(testTool);
+
+      // Use appropriate test data for different tools
+      if (testTool.name === 'Transcript_Log_Query') {
+        testParams.input = 'test query for recent interactions';
+      } else if (testTool.name === 'Webflow_Tools' || testTool.name === 'Uru_Tools') {
+        // These tools don't require parameters, they just list available operations
+        // testParams should already be empty object from generateTestParameters
+      }
 
       this.log(`📝 Generated parameters: ${JSON.stringify(testParams, null, 2)}`, 'debug');
 
@@ -1063,9 +1080,9 @@ class UruMCPTestClient extends EventEmitter {
 /**
  * Main comprehensive test execution function
  */
-async function runTests(token, options = {}) {
+async function runTests(key, options = {}) {
   const startTime = Date.now();
-  const testClient = new UruMCPTestClient(token, options);
+  const testClient = new UruMCPTestClient(key, options);
 
   try {
     console.log(chalk.blue.bold('🚀 URU MCP SERVER COMPREHENSIVE TEST SUITE'));
@@ -1243,7 +1260,7 @@ function setupCLI() {
     .name('uru-mcp-test-client')
     .description('Comprehensive test client for validating Uru MCP server functionality and Claude Desktop integration')
     .version('2.0.0')
-    .requiredOption('-t, --token <token>', 'Uru Platform authentication token')
+    .requiredOption('-k, --key <key>', 'Uru Platform authentication key')
     .option('-d, --debug', 'Enable debug logging', false)
     .option('--timeout <ms>', 'Connection timeout in milliseconds', '30000')
     .option('--test-mode <mode>', 'Test mode: standalone, integration, or comprehensive', 'comprehensive')
@@ -1251,12 +1268,12 @@ function setupCLI() {
     .option('--claude-desktop', 'Focus on Claude Desktop integration tests', false)
     .addHelpText('after', `
 Examples:
-  $ node test_client.js --token your-token-here
-  $ node test_client.js --token your-token-here --debug
-  $ node test_client.js --token your-token-here --timeout 60000
-  $ node test_client.js --token your-token-here --test-mode integration
-  $ node test_client.js --token your-token-here --claude-desktop
-  $ node test_client.js --token your-token-here --quick
+  $ node test_client.js --key your-key-here
+  $ node test_client.js --key your-key-here --debug
+  $ node test_client.js --key your-key-here --timeout 60000
+  $ node test_client.js --key your-key-here --test-mode integration
+  $ node test_client.js --key your-key-here --claude-desktop
+  $ node test_client.js --key your-key-here --quick
 
 Test Modes:
   standalone     - Test MCP server functionality in isolation
@@ -1281,10 +1298,10 @@ Make sure the Uru MCP server is properly installed:
   $ npm install -g uru-mcp
 `)
     .action(async (options) => {
-      // Validate token
-      if (!options.token || options.token.trim().length === 0) {
-        console.error(chalk.red('❌ Error: Authentication token is required'));
-        console.error(chalk.gray('Use --token to provide your Uru Platform token'));
+      // Validate key
+      if (!options.key || options.key.trim().length === 0) {
+        console.error(chalk.red('❌ Error: Authentication key is required'));
+        console.error(chalk.gray('Use --key to provide your Uru Platform key'));
         process.exit(1);
       }
 
@@ -1309,7 +1326,7 @@ Make sure the Uru MCP server is properly installed:
       }
 
       // Run tests with enhanced options
-      await runTests(options.token, {
+      await runTests(options.key, {
         debug: options.debug,
         timeout: timeout,
         testMode: testMode,
