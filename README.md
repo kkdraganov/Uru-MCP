@@ -189,36 +189,51 @@ This design prevents overwhelming your AI client with 400+ tools while maintaini
 
 ### 1. Authentication
 
-Obtain your Uru Platform authentication token and configure it using one of these methods:
+The Uru MCP server supports two authentication methods:
 
-#### Method 1: Interactive Setup (Recommended)
+#### Method 1: Per-Request API Keys (Recommended)
 
+Pass your API key as a parameter in each tool call. This method provides better security and flexibility:
+
+```json
+{
+  "tool": "example-tool",
+  "arguments": {
+    "api_key": "your-auth-token-here",
+    "message": "Hello world"
+  }
+}
+```
+
+When using this method, no server configuration is required.
+
+#### Method 2: Server-Level Configuration (Legacy)
+
+Configure a default API key at the server level using one of these methods:
+
+**Interactive Setup:**
 ```bash
 npx uru-mcp --setup
 ```
 
-This will guide you through configuring:
-- Authentication token (required)
-- Debug mode preferences
-
-#### Method 2: Environment Variables
-
+**Environment Variables:**
 ```bash
 export URU_API_KEY="your-auth-token-here"
 export URU_DEBUG="false"
 ```
 
-#### Method 3: Command Line Options
-
+**Command Line Options:**
 ```bash
 npx uru-mcp --token your-auth-token-here
 ```
 
+> **Note:** When using per-request API keys, the server-level token becomes optional. If both are provided, the per-request API key takes precedence.
+
 ### 2. Environment Variables
 
-#### Required
+#### Required (for server-level authentication only)
 
-- `URU_API_KEY`: Uru Platform authentication API key (required)
+- `URU_API_KEY`: Uru Platform authentication API key (optional if using per-request API keys)
 
 #### Optional
 
@@ -673,14 +688,16 @@ For custom MCP client integration, the server supports:
 - **Transport:** STDIO (standard input/output)
 - **Protocol:** JSON-RPC 2.0
 - **Capabilities:** Tools (with listChanged support), Logging
-- **Authentication:** Bearer token via environment variables
+- **Authentication:** Bearer token via environment variables or per-request API keys
 
 ## 🔒 Security
 
 - **Tokens:** Never commit authentication tokens to version control
-- **Environment Variables:** Use environment variables for sensitive data
+- **Per-Request Keys:** API keys in tool arguments provide better isolation than server-level tokens
+- **Environment Variables:** Use environment variables for sensitive data when using server-level authentication
 - **Network:** All communication uses HTTPS with the Uru Platform
 - **Permissions:** Only grant necessary permissions to authentication tokens
+- **Key Rotation:** Per-request API keys make key rotation easier and more secure
 
 ## 🤝 Support
 

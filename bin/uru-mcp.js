@@ -92,17 +92,18 @@ async function main() {
     const configManager = new ConfigManager();
     const config = await configManager.loadConfig(options);
 
-    // Validate configuration
+    // Validate configuration - token is now optional
     if (!config.token) {
-      console.error(chalk.red('❌ Authentication token is required. Use --token or run --setup'));
-      process.exit(1);
+      console.error(chalk.yellow('⚠️  No authentication token configured'));
+      console.error(chalk.gray('   API key must be provided in tool arguments'));
+      console.error(chalk.gray('   To configure a default token: Use --token or run --setup'));
     }
 
     // Start MCP server (all logging will go to stderr)
     if (config.debug) {
       console.error(chalk.green('✅ Starting Uru MCP Server...'));
       console.error(chalk.gray(`   Proxy: ${config.proxyUrl}`));
-      console.error(chalk.gray(`   Token: ${config.token.substring(0, 20)}...`));
+      console.error(chalk.gray(`   Token: ${config.token ? config.token.substring(0, 20) + '...' : 'none (will use per-request API keys)'}`));
       console.error(chalk.gray(`   Debug: enabled`));
       console.error();
     }

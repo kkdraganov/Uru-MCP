@@ -12,18 +12,17 @@ const ConfigManager = require('./lib/config-manager');
 async function main() {
   try {
     // Ensure all console output goes to stderr to avoid contaminating JSON-RPC on stdout
-    const originalConsoleLog = console.log;
     console.log = (...args) => console.error(...args);
 
     // Load configuration
     const configManager = new ConfigManager();
     const config = await configManager.loadConfig();
 
-    // Validate required configuration
+    // Validate configuration - token is now optional
     if (!config.token) {
-      console.error('❌ Authentication token is required. Set URU_API_KEY environment variable or run: npx uru-mcp --setup');
+      console.error('⚠️  No authentication token configured. API key must be provided in tool arguments.');
+      console.error('   To configure a default token: Set URU_TOKEN environment variable or run: npx uru-mcp --setup');
       console.error('   For MCP client configuration examples, run: npx uru-mcp --claude-config');
-      process.exit(1);
     }
 
     // Start MCP server
