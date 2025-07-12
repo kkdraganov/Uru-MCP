@@ -699,6 +699,19 @@ For custom MCP client integration, the server supports:
 - **Permissions:** Only grant necessary permissions to authentication tokens
 - **Key Rotation:** Per-request API keys make key rotation easier and more secure
 
+## 📋 Changelog
+
+### Version 2.2.0
+- **Enhanced Authentication**: Added support for per-request API keys passed as tool parameters
+- **Environment Variable Fallback**: Maintained backward compatibility with `URU_API_KEY` environment variable
+- **Dynamic Tool Schemas**: API key parameter automatically added as required/optional based on server configuration
+- **Improved Security**: Better isolation and key rotation capabilities with per-request authentication
+- **Comprehensive Documentation**: Added detailed authentication and migration guides
+
+### Version 2.1.0
+- Added apps caching and improved tool discovery
+- Enhanced two-tier tool system architecture
+
 ## 🤝 Support
 
 - **Documentation:** [GitHub Repository](https://github.com/kkdraganov/Uru-MCP)
