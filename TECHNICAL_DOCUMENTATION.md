@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-The Uru MCP server has been completely redesigned with a **Hierarchical Tool Namespace with Dynamic Loading** architecture that transforms a non-compliant pseudo-tool system into a fully MCP-compliant solution. This architectural transformation addresses the critical challenge of efficiently managing 400+ tools while maintaining optimal performance, user experience, and strict adherence to Model Context Protocol standards.
+The Uru MCP server implements a **Hierarchical Tool Namespace with Dynamic Loading** architecture that provides a fully MCP-compliant solution with advanced caching, intelligent pre-loading, and automatic cleanup capabilities. This architectural implementation addresses the critical challenge of efficiently managing 400+ tools while maintaining optimal performance, user experience, and strict adherence to Model Context Protocol standards.
 
 ### Key Achievements
 - **Full MCP Protocol Compliance**: Standard `tools/list` and `tools/call` implementations
@@ -106,18 +106,26 @@ getMetrics() → Performance and usage statistics
 registerNamespaceTools(namespace, tools) → Array of registered tools
 getTool(toolName) → Tool definition or null
 getNamespaceTools(namespace) → Array of tools in namespace
+isNamespaceLoaded(namespace) → Boolean
 
 // Cache management
 cleanupStaleNamespaces() → void
 trackUsage(namespace) → void
 getTopUsedNamespaces(limit) → Array of namespace names
+getStatistics() → Object with cache statistics
+
+// Namespace collision handling
+normalizeNamespace(appName) → String
+denormalizeNamespace(namespace) → String
 ```
 
 **Features**:
 - Automatic TTL-based cleanup (default: 5 minutes)
 - Usage-based retention for frequently accessed namespaces
-- Memory usage optimization with configurable limits
+- Memory usage optimization with configurable limits (default: 20 namespaces)
 - Comprehensive statistics and monitoring
+- Namespace collision detection and resolution
+- Tool categorization and priority assignment
 
 ## Workflow Diagrams
 
@@ -279,25 +287,28 @@ All responses follow MCP specification exactly:
 - **Priority Sorting**: Discovery tools and high-priority tools first
 
 ### Memory Management
-- **Automatic Cleanup**: Removes stale namespaces after 5 minutes
-- **Usage-Based Retention**: Keeps frequently used namespaces longer
-- **Configurable Limits**: Maximum 20 namespaces by default
+- **Automatic Cleanup**: Removes stale namespaces after 5 minutes (configurable via URU_CACHE_TIMEOUT)
+- **Usage-Based Retention**: Keeps frequently used namespaces longer based on access patterns
+- **Configurable Limits**: Maximum 20 namespaces by default (configurable via URU_MAX_NAMESPACES)
+- **Intelligent Pre-loading**: Pre-loads high-priority namespaces (platform, company) for optimal performance
+- **Parallel Loading**: Supports concurrent namespace loading when enabled
 
 ## Configuration Options
 
 ### Environment Variables
 ```bash
 # Core configuration
-URU_API_KEY="your-api-key"
-URU_PROXY_URL="https://mcp.uruenterprises.com"
-URU_DEBUG="true"
+URU_API_KEY="your-api-key"                  # Authentication token
+URU_PROXY_URL="https://mcp.uruenterprises.com"  # MCP proxy endpoint
+URU_DEBUG="true"                            # Enable debug logging
 
 # Hierarchical tool configuration
-URU_MAX_TOOLS_PER_PAGE="50"
-URU_MAX_NAMESPACES="20"
-URU_PRELOAD_NAMESPACES="platform,company"
-URU_ENABLE_PARALLEL_LOADING="true"
-URU_ENABLE_PREDICTIVE_LOADING="false"
+URU_MAX_TOOLS_PER_PAGE="50"                # Tools per page in listings
+URU_MAX_NAMESPACES="20"                     # Maximum cached namespaces
+URU_PRELOAD_NAMESPACES="platform,company"  # Comma-separated list of namespaces to pre-load
+URU_ENABLE_PARALLEL_LOADING="true"         # Enable concurrent namespace loading
+URU_ENABLE_PREDICTIVE_LOADING="false"      # Enable predictive loading (experimental)
+URU_CACHE_TIMEOUT="300000"                 # Cache timeout in milliseconds (5 minutes)
 ```
 
 ### Configuration File (~/.uru-mcp.json)

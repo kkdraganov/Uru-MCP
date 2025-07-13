@@ -4,17 +4,20 @@ This document outlines how to distribute and publish the Uru MCP package.
 
 ## 📦 Package Overview
 
-The Uru MCP is a standalone, distributable npm package that provides a Model Context Protocol (MCP) server for Uru Platform integration. It allows MCP clients to easily connect to the Uru Platform with minimal configuration.
+The Uru MCP is a standalone, distributable npm package that provides a Model Context Protocol (MCP) server for Uru Platform integration with advanced hierarchical namespace system. It allows MCP clients to easily connect to the Uru Platform with minimal configuration while efficiently managing 400+ tools.
 
 ### Key Features
 
 - **Single Command Installation**: `npx uru-mcp --setup`
+- **Hierarchical Tool Namespace System**: Efficient management of 400+ tools
+- **Dynamic Loading**: Intelligent caching and pre-loading capabilities
 - **Minimal Configuration**: Only requires authentication token
-- **MCP Protocol Compliance**: Full JSON-RPC 2.0 over STDIO support
-- **Interactive Setup**: Guided configuration wizard
-- **Comprehensive Error Handling**: User-friendly error messages
+- **MCP Protocol Compliance**: Full JSON-RPC 2.0 over STDIO support with hierarchical namespacing
+- **Interactive Setup**: Guided configuration wizard with advanced options
+- **Comprehensive Error Handling**: User-friendly error messages and debugging
 - **Multi-Client Support**: Works with Claude Desktop, VS Code, Cursor, and other MCP clients
 - **Fixed Backend URL**: Always connects to `https://mcp.uruenterprises.com`
+- **Performance Optimization**: TTL-based cleanup, usage tracking, and parallel loading
 
 ## 🚀 Distribution Methods
 
@@ -63,10 +66,11 @@ npx github:kkdraganov/Uru-MCP
 ## 📋 User Experience Flow
 
 1. **Installation**: `npx uru-mcp --setup`
-2. **Configuration**: Enter authentication token
-3. **Testing**: `npx uru-mcp --test`
+2. **Configuration**: Enter authentication token and optional advanced settings
+3. **Testing**: `npx uru-mcp --test` (includes hierarchical namespace testing)
 4. **Claude Setup**: `npx uru-mcp --claude-config`
-5. **Usage**: Add to Claude Desktop and start using
+5. **Usage**: Add to Claude Desktop and experience hierarchical tool discovery
+6. **Advanced Configuration**: Set environment variables for optimization
 
 ## 🛠️ Maintenance
 

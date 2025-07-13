@@ -1,23 +1,28 @@
 # Uru MCP
 
-A Model Context Protocol (MCP) server that provides AI assistants with access to Uru Platform capabilities through a hierarchical tool namespace system that efficiently manages 400+ tools while maintaining full MCP protocol compliance.
+A Model Context Protocol (MCP) server that provides AI assistants with access to Uru Platform capabilities through an advanced hierarchical tool namespace system that efficiently manages 400+ tools while maintaining full MCP protocol compliance.
 
 ## Overview
 
-**Uru MCP** enables AI assistants to work directly with Uru Platform services through the Model Context Protocol. The server provides a standardized, MCP-compliant interface for accessing Uru's AI tools and capabilities via an innovative hierarchical tool namespace system.
+**Uru MCP v3.0.1** enables AI assistants to work directly with Uru Platform services through the Model Context Protocol. The server provides a standardized, MCP-compliant interface for accessing Uru's AI tools and capabilities via an innovative hierarchical tool namespace system with dynamic loading, intelligent caching, and automatic cleanup.
 
 The server works seamlessly with MCP client applications such as [Claude Desktop](https://claude.ai/download), [VS Code](https://code.visualstudio.com/docs/copilot/chat/mcp-servers), [Cursor](https://www.cursor.com/), and other MCP-compatible clients.
 
-## 🏗️ Hierarchical Tool Namespace System
+## 🏗️ Advanced Hierarchical Tool Namespace System
 
-The Uru MCP server implements a hierarchical tool namespace system that provides full MCP protocol compliance while efficiently managing large tool catalogs without overwhelming clients.
+The Uru MCP server implements an advanced hierarchical tool namespace system with dynamic loading capabilities that provides full MCP protocol compliance while efficiently managing large tool catalogs without overwhelming clients.
 
 ### System Architecture
+
+**Core Components:**
+- **Dynamic Tool Registry**: Runtime tool management with TTL-based cleanup and usage tracking
+- **Intelligent Tool Loader**: Pre-loading and optimization with parallel loading capabilities
+- **Namespace Manager**: Collision detection, normalization, and app-to-namespace mapping
 
 **Namespace Discovery Tools**
 - Tools ending in `.list_tools` (e.g., `gmail_work_kal.list_tools`, `platform.list_tools`)
 - Each namespace represents a service integration or functional area
-- Provides progressive tool discovery and loading
+- Provides progressive tool discovery and dynamic loading
 
 **Namespaced Tools**
 - Tools prefixed with namespace (e.g., `gmail_work_kal.send_email`, `platform.manage_users`)
@@ -51,16 +56,18 @@ call gmail_work_kal.send_email with parameters → Email sent via Gmail (Work - 
 
 ### Tool Organization
 
-The hierarchical system organizes tools into the following categories:
+The hierarchical system organizes tools into the following categories with intelligent caching and pre-loading:
 
 **Discovery Tools**
 - `uru_help` - Get help with the hierarchical tool system
 - `*.list_tools` - Namespace discovery tools (e.g., `gmail_work_kal.list_tools`)
 
-**Namespace Categories**
-- **Communication**: `gmail_work_kal.*`, `outlook_personal.*`, `slack_team.*`
+**Pre-loaded Namespaces** (automatically loaded for optimal performance)
 - **Platform**: `platform.*` - Uru Platform management and administration
 - **Company**: `company.*` - Workflow automation and business processes
+
+**Dynamic Namespaces** (loaded on-demand)
+- **Communication**: `gmail_work_kal.*`, `outlook_personal.*`, `slack_team.*`
 - **Productivity**: `calendar.*`, `drive.*`, `tasks.*`
 - **Development**: `github.*`, `deployment.*`, `monitoring.*`
 
@@ -168,7 +175,7 @@ URU_PROXY_URL="https://mcp.uruenterprises.com"    # MCP proxy endpoint
 ### Prerequisites
 
 - **Node.js 18+** (required)
-- **Uru Platform authentication token** (required)
+- **Uru Platform API key** (required)
 
 ### 1. Install MCP Server
 
@@ -183,7 +190,9 @@ Add the server configuration to your MCP settings file. MCP servers can be insta
       "command": "npx",
       "args": ["uru-mcp"],
       "env": {
-        "URU_API_KEY": "your-auth-token-here"
+        "URU_API_KEY": "your-auth-token-here",
+        "URU_MAX_TOOLS_PER_PAGE": "50",
+        "URU_PRELOAD_NAMESPACES": "platform,company"
       }
     }
   }
@@ -192,24 +201,25 @@ Add the server configuration to your MCP settings file. MCP servers can be insta
 
 ### 2. Test the Installation
 
-Test the two-tier discovery system with your AI client:
+Test the hierarchical namespace system with your AI client:
 
 ```bash
-# Test connection
+# Test connection and comprehensive functionality
 npx uru-mcp --test
 
 # Or ask your AI client:
-"Please list available Uru tools"  # Shows service connections
-"Call Gmail (Work - Kal)"          # Explore Gmail tools
-"Send an email using GMAIL_SEND_EMAIL"  # Execute specific tool
+"Please list available Uru tools"           # Shows namespace discovery tools
+"Call gmail_work_kal.list_tools"           # Explore Gmail namespace
+"Send an email using gmail_work_kal.send_email"  # Execute specific tool
 ```
 
-### 3. Understanding the Two-Tier Workflow
+### 3. Understanding the Hierarchical Workflow
 
-When you first connect, you'll see service connections rather than individual tools:
-- **Service Connections**: "Gmail (Work - Kal)", "COMPANY", "PLATFORM", etc.
-- **Tool Exploration**: Call any service connection to see its available tools
-- **Direct Execution**: Call specific tools by name with parameters
+When you first connect, you'll see namespace discovery tools and pre-loaded tools:
+- **Discovery Tools**: `gmail_work_kal.list_tools`, `platform.list_tools`, `uru_help`
+- **Pre-loaded Tools**: High-priority tools from `platform` and `company` namespaces
+- **Dynamic Loading**: Namespace tools are loaded on-demand when discovery tools are called
+- **Direct Execution**: Namespaced tools are executed directly with full MCP compliance
 
 This design prevents overwhelming your AI client with 400+ tools while maintaining full access to all capabilities.
 
@@ -252,10 +262,10 @@ export URU_DEBUG="false"
 
 **Command Line Options:**
 ```bash
-npx uru-mcp --token your-auth-token-here
+npx uru-mcp --key your-api-key-here
 ```
 
-> **Note:** When using per-request API keys, the server-level token becomes optional. If both are provided, the per-request API key takes precedence.
+> **Note:** When using per-request API keys, the server-level API key becomes optional. If both are provided, the per-request API key takes precedence.
 
 ### 2. Environment Variables
 
@@ -496,7 +506,7 @@ npx uru-mcp --test
 npx uru-mcp --claude-config
 
 # Start server with custom settings
-npx uru-mcp --token your-token --debug
+npx uru-mcp --key your-api-key --debug
 
 # Show help
 npx uru-mcp --help
@@ -506,7 +516,7 @@ npx uru-mcp --help
 
 | Option | Environment Variable | Description |
 |--------|---------------------|-------------|
-| `--token` | `URU_API_KEY` | Authentication token |
+| `--key` | `URU_API_KEY` | Uru Platform API key |
 | `--debug` | `URU_DEBUG` | Enable debug logging |
 
 ## 🔍 Troubleshooting
@@ -539,7 +549,7 @@ npx uru-mcp --help
 
 **❌ "Server startup failures"**
 - Check that Node.js 18+ is installed
-- Verify the authentication token is provided
+- Verify the Uru API key is provided
 - Enable debug mode for detailed error information
 
 #### Two-Tier System Issues
@@ -595,18 +605,18 @@ URU_DEBUG=true npx uru-mcp
 1. **Test connection:** `npx uru-mcp --test`
 2. **View configuration examples:** `npx uru-mcp --claude-config`
 3. **View help:** `npx uru-mcp --help`
-4. **Run comprehensive tests:** `node test_client.js --token YOUR_TOKEN`
+4. **Run comprehensive tests:** `node test_client.js --key YOUR_API_KEY`
 
 **Two-Tier System Testing:**
 ```bash
 # Test the complete two-tier workflow
-node test_client.js --token YOUR_TOKEN
+node test_client.js --key YOUR_API_KEY
 
 # Test with debug logging to see tier transitions
-node test_client.js --token YOUR_TOKEN --debug
+node test_client.js --key YOUR_API_KEY --debug
 
 # Test specific integration scenarios
-node test_client.js --token YOUR_TOKEN --test-mode integration
+node test_client.js --key YOUR_API_KEY --test-mode integration
 ```
 
 **Manual Testing Workflow:**
@@ -630,13 +640,13 @@ npm run start
 
 ```bash
 # Run comprehensive test suite
-node test_client.js --token YOUR_TOKEN
+node test_client.js --key YOUR_API_KEY
 
 # Run with debug logging
-node test_client.js --token YOUR_TOKEN --debug
+node test_client.js --key YOUR_API_KEY --debug
 
 # Focus on MCP protocol compliance
-node test_client.js --token YOUR_TOKEN --test-mode integration
+node test_client.js --key YOUR_API_KEY --test-mode integration
 ```
 
 ### Project Structure
@@ -697,7 +707,7 @@ async function handleBusinessProcess(client) {
 
 ### Configuration File
 
-The Uru MCP server automatically creates and manages a configuration file at `~/.uru-mcp.json` when you run the setup wizard. This file stores your authentication token and debug preferences.
+The Uru MCP server automatically creates and manages a configuration file at `~/.uru-mcp.json` when you run the setup wizard. This file stores your Uru API key and debug preferences.
 
 You can manually edit this file if needed:
 
@@ -716,18 +726,33 @@ For custom MCP client integration, the server supports:
 - **Transport:** STDIO (standard input/output)
 - **Protocol:** JSON-RPC 2.0
 - **Capabilities:** Tools (with listChanged support), Logging
-- **Authentication:** Bearer token via environment variables or per-request API keys
+- **Authentication:** Bearer API key via environment variables or per-request API keys
 
 ## 🔒 Security
 
-- **Tokens:** Never commit authentication tokens to version control
-- **Per-Request Keys:** API keys in tool arguments provide better isolation than server-level tokens
+- **API Keys:** Never commit Uru API keys to version control
+- **Per-Request Keys:** API keys in tool arguments provide better isolation than server-level keys
 - **Environment Variables:** Use environment variables for sensitive data when using server-level authentication
 - **Network:** All communication uses HTTPS with the Uru Platform
-- **Permissions:** Only grant necessary permissions to authentication tokens
+- **Permissions:** Only grant necessary permissions to Uru API keys
 - **Key Rotation:** Per-request API keys make key rotation easier and more secure
 
 ## 📋 Changelog
+
+### Version 3.0.1
+- **Documentation Updates**: Updated all documentation to use URU_API_KEY instead of URU_TOKEN
+- **CLI Consistency**: Changed CLI argument from --token to --key for better clarity
+- **Terminology Standardization**: Consistent use of "Uru API key" throughout documentation
+- **Configuration Examples**: Updated all MCP client configuration examples
+
+### Version 3.0.0
+- **Hierarchical Tool Namespace System**: Complete architectural redesign with dynamic loading
+- **Dynamic Tool Registry**: TTL-based cleanup, usage tracking, and intelligent caching
+- **Intelligent Tool Loader**: Pre-loading, parallel loading, and performance optimization
+- **Namespace Management**: Collision detection, normalization, and app-to-namespace mapping
+- **Enhanced Performance**: Efficient management of 400+ tools with configurable limits
+- **Full MCP Compliance**: JSON-RPC 2.0 over STDIO with hierarchical namespacing
+- **Advanced Configuration**: Environment-based configuration with optimization options
 
 ### Version 2.2.0
 - **Enhanced Authentication**: Added support for per-request API keys passed as tool parameters

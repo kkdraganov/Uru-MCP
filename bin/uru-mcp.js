@@ -23,8 +23,8 @@ const program = new Command();
 program
   .name('uru-mcp')
   .description('Model Context Protocol (MCP) server for Uru Platform integration')
-  .version('2.2.0')
-  .option('-t, --token <token>', 'Authentication token')
+  .version('3.0.1')
+  .option('-k, --key <key>', 'Authentication token')
   .option('-d, --debug', 'Enable debug mode')
   .option('-p, --proxy-url <url>', 'MCP proxy URL (default: https://mcp.uruenterprises.com)')
   .option('--setup', 'Run interactive setup wizard')
@@ -35,7 +35,7 @@ Examples:
   $ npx uru-mcp --setup                    # Interactive setup
   $ npx uru-mcp --test                     # Test connection
   $ npx uru-mcp --claude-config            # Show MCP client config
-  $ npx uru-mcp --token your-token-here    # Start MCP server
+  $ npx uru-mcp --key your-api-key-here    # Start MCP server
   $ npx uru-mcp --proxy-url http://localhost:3001  # Use development proxy
 
 Environment Variables:
@@ -96,7 +96,7 @@ async function main() {
     if (!config.token) {
       console.error(chalk.yellow('⚠️  No authentication token configured'));
       console.error(chalk.gray('   API key must be provided in tool arguments'));
-      console.error(chalk.gray('   To configure a default token: Use --token or run --setup'));
+      console.error(chalk.gray('   To configure a default API key: Use --key or run --setup'));
     }
 
     // Start MCP server (all logging will go to stderr)
@@ -130,10 +130,10 @@ async function runSetupWizard() {
     {
       type: 'input',
       name: 'token',
-      message: 'Enter your authentication token:',
+      message: 'Enter your Uru API key:',
       validate: (input) => {
         if (!input || input.trim().length === 0) {
-          return 'Authentication token is required';
+          return 'Uru API key is required';
         }
         return true;
       }
@@ -164,7 +164,7 @@ async function testConnection() {
     const config = await configManager.loadConfig(options);
 
     if (!config.token) {
-      spinner.fail('No authentication token configured. Run --setup first.');
+      spinner.fail('No Uru API key configured. Run --setup first.');
       return;
     }
 

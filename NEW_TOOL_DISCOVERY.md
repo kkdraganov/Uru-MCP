@@ -54,21 +54,31 @@ MCP Client → Uru MCP Server → MCP Proxy → Tool Sources
 - `{namespace}.list_tools` - Discover tools within specific namespace
 - `uru_help` - Global help and namespace discovery
 
-### Dynamic Loading Capabilities
+### Advanced Dynamic Loading Capabilities
+
+The implementation includes sophisticated loading mechanisms:
 
 **Key Features:**
-1. **Lazy Loading**: Load namespace tools only when requested
-2. **Intelligent Caching**: Cache frequently used namespaces with TTL
-3. **Predictive Loading**: Pre-load high-priority namespaces
-4. **Memory Management**: Automatic cleanup of unused namespaces
-5. **Parallel Loading**: Concurrent namespace loading for performance
+1. **Lazy Loading**: Load namespace tools only when requested via discovery tools
+2. **Intelligent Caching**: Cache frequently used namespaces with configurable TTL (default: 5 minutes)
+3. **Pre-loading**: Automatically pre-load high-priority namespaces (platform, company)
+4. **Memory Management**: Automatic cleanup of unused namespaces with usage-based retention
+5. **Parallel Loading**: Concurrent namespace loading for improved performance
+6. **Collision Detection**: Automatic namespace collision detection and resolution
+7. **Usage Tracking**: Monitor namespace access patterns for optimization
 
 ### Tool Registry Architecture
 
 **Components:**
-- **DynamicToolRegistry**: Manages tool caching and namespace lifecycle
-- **ToolNamespaceManager**: Handles namespace normalization and app mapping
-- **IntelligentToolLoader**: Implements loading strategies and optimization
+- **DynamicToolRegistry**: Manages tool caching, namespace lifecycle, and collision detection
+- **ToolNamespaceManager**: Handles namespace normalization, app mapping, and denormalization
+- **IntelligentToolLoader**: Implements loading strategies, pre-loading, and performance optimization
+
+**Configuration Options:**
+- `URU_MAX_NAMESPACES`: Maximum cached namespaces (default: 20)
+- `URU_CACHE_TIMEOUT`: Cache timeout in milliseconds (default: 300000)
+- `URU_PRELOAD_NAMESPACES`: Comma-separated list of namespaces to pre-load
+- `URU_ENABLE_PARALLEL_LOADING`: Enable concurrent loading (default: true)
 
 ## Proxy Modifications Required
 

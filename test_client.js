@@ -11,7 +11,7 @@
  * 3. Protocol Compliance Testing - MCP 2025-06-18 specification adherence
  * 4. Performance and Reliability Testing - Connection stability and error handling
  *
- * Usage: node test_client.js --token YOUR_TOKEN_HERE [options]
+ * Usage: node test_client.js --key YOUR_API_KEY_HERE [options]
  */
 
 const { Client } = require('@modelcontextprotocol/sdk/client/index.js');
