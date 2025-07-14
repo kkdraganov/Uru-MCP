@@ -45,13 +45,13 @@ MCP Client → Uru MCP Server → MCP Proxy → Tool Sources
 **Namespace Format:** `{namespace}.{tool_name}`
 
 **Examples:**
-- `gmail_work_kal_send_email` - Gmail tool in work account namespace
-- `platform_create_workspace` - Platform-specific tool
-- `company_analyze_transcript` - Company n8n workflow tool
-- `slack_team_send_message` - Slack tool in team workspace
+- `gmail_work_kal__send_email` - Gmail tool in work account namespace
+- `platform__create_workspace` - Platform-specific tool
+- `company__analyze_transcript` - Company n8n workflow tool
+- `slack_team__send_message` - Slack tool in team workspace
 
 **Namespace Discovery Tools:**
-- `{namespace}_list_tools` - Discover tools within specific namespace
+- `{namespace}__list_tools` - Discover tools within specific namespace
 - `uru_help` - Global help and namespace discovery
 
 ### Advanced Dynamic Loading Capabilities
@@ -303,7 +303,7 @@ class LegacyToolHandler {
 describe('NamespaceAwareToolRouter', () => {
   test('should route namespaced tools correctly', async () => {
     const result = await router.routeExecution(
-      'gmail_work_kal.send_email',
+      'gmail_work_kal__send_email',
       { to: 'test@example.com' },
       { userId: 'user123' }
     );
@@ -340,7 +340,7 @@ describe('MCP Proxy Integration', () => {
   
   test('should execute namespaced tools', async () => {
     const response = await request(app)
-      .post('/execute/gmail_work_kal.send_email')
+      .post('/execute/gmail_work_kal__send_email')
       .send({ to: 'test@example.com', subject: 'Test' })
       .expect(200);
     

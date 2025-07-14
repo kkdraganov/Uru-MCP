@@ -158,7 +158,7 @@ Response: {tools: [], nextCursor: string}
 
 ### Namespace Exploration Process
 ```
-Client Request: tools/call("gmail_work_kal_list_tools")
+Client Request: tools/call("gmail_work_kal__list_tools")
         ↓
 MCP Server.handleNamespaceDiscovery()
         ↓
@@ -187,7 +187,7 @@ Response: {content: [{type: "text", text: "..."}]}
 
 ### Tool Execution Process
 ```
-Client Request: tools/call("gmail_work_kal.send_email", args)
+Client Request: tools/call("gmail_work_kal__send_email", args)
         ↓
 MCP Server.handleNamespacedToolExecution()
         ↓
@@ -410,13 +410,13 @@ await server.start();
 ### Email Management Workflow
 ```javascript
 // 1. Initial discovery
-tools/list → [gmail_work_kal_list_tools, platform_list_tools, uru_help, ...]
+tools/list → [gmail_work_kal__list_tools, platform__list_tools, uru_help, ...]
 
 // 2. Explore Gmail namespace
-call gmail_work_kal_list_tools → Shows available Gmail tools
+call gmail_work_kal__list_tools → Shows available Gmail tools
 
 // 3. Send email
-call gmail_work_kal_send_email {
+call gmail_work_kal__send_email {
   "to": "colleague@company.com",
   "subject": "Project Update",
   "body": "Here's the latest status..."
@@ -426,17 +426,17 @@ call gmail_work_kal_send_email {
 ### Multi-Namespace Task Workflow
 ```javascript
 // 1. Get user information from platform
-call platform.get_user_info { "user_id": "123" }
+call platform__get_user_info { "user_id": "123" }
 
 // 2. Update calendar based on user data
-call calendar.create_event {
+call calendar__create_event {
   "title": "User Meeting",
   "start": "2024-01-15T10:00:00Z",
   "attendees": ["user@company.com"]
 }
 
 // 3. Send notification email
-call gmail_work_kal.send_email {
+call gmail_work_kal__send_email {
   "to": "user@company.com",
   "subject": "Meeting Scheduled",
   "body": "Your meeting has been scheduled."
