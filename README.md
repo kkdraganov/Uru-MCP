@@ -37,21 +37,21 @@ The Uru MCP server implements an advanced hierarchical tool namespace system wit
 
 ### How It Works
 
-1. **Discovery Phase**: Call `tools/list` to see namespace discovery tools and pre-loaded tools
-2. **Exploration Phase**: Call namespace discovery tools (e.g., `gmail_work_kal__list_tools`) to load tools in that namespace
-3. **Execution Phase**: Call specific namespaced tools directly (e.g., `gmail_work_kal__send_email`)
+1. **Discovery Phase**: Call `tools/list` to see namespace tools (list_tools and execute_tool for each namespace)
+2. **Exploration Phase**: Call namespace list_tools (e.g., `gmail_work_kal__list_tools`) to see available tools
+3. **Execution Phase**: Call namespace execute_tool (e.g., `gmail_work_kal__execute_tool`) with tool_name and parameters
 
 ### Example Workflow
 
 ```bash
-# Step 1: Discover available namespaces and tools
-tools/list → [gmail_work_kal__list_tools, platform__list_tools, company__list_tools, uru_help, ...]
+# Step 1: Discover available namespace tools
+tools/list → [gmail_work_kal__list_tools, gmail_work_kal__execute_tool, platform__list_tools, platform__execute_tool, ...]
 
 # Step 2: Explore Gmail namespace
-call gmail_work_kal__list_tools → Loads and displays Gmail tools
+call gmail_work_kal__list_tools → Shows available Gmail tools
 
-# Step 3: Execute specific namespaced tool
-call gmail_work_kal__send_email with parameters → Email sent via Gmail (Work - Kal)
+# Step 3: Execute specific tool via execute_tool
+call gmail_work_kal__execute_tool with {"tool_name": "GMAIL_SEND_EMAIL", "parameters": {"to": "user@example.com", "subject": "Test"}} → Email sent via Gmail (Work - Kal)
 ```
 
 ### Tool Organization
@@ -108,18 +108,21 @@ call gmail_work_kal__send_email {
 }
 ```
 
-**Company Workflow Example (Hierarchical)**
+**Company Workflow Example (Two-Tool Pattern)**
 ```javascript
-// Discover available namespaces
-tools/list → [company__list_tools, platform__list_tools, ...]
+// Discover available namespace tools
+tools/list → [company__list_tools, company__execute_tool, platform__list_tools, platform__execute_tool, ...]
 
 // Explore company namespace
-call company__list_tools → Shows: company__process_invoice, company__onboard_customer, etc.
+call company__list_tools → Shows: PROCESS_INVOICE, ONBOARD_CUSTOMER, etc.
 
-// Execute workflow using namespaced tool
-call company__process_invoice {
-  "invoice_data": {...},
-  "approval_required": true
+// Execute workflow using execute_tool
+call company__execute_tool {
+  "tool_name": "PROCESS_INVOICE",
+  "parameters": {
+    "invoice_data": {...},
+    "approval_required": true
+  }
 }
 ```
 
@@ -127,13 +130,19 @@ call company__process_invoice {
 ```javascript
 // Get platform information
 call platform__list_tools → Shows platform management tools
-call platform__get_user_info { "user_id": "123" }
+call platform__execute_tool {
+  "tool_name": "GET_USER_INFO",
+  "parameters": { "user_id": "123" }
+}
 
 // Send notification about the user
-call gmail_work_kal__send_email {
-  "to": "admin@company.com",
-  "subject": "User Update",
-  "body": "User information has been updated."
+call gmail_work_kal__execute_tool {
+  "tool_name": "GMAIL_SEND_EMAIL",
+  "parameters": {
+    "to": "admin@company.com",
+    "subject": "User Update",
+    "body": "User information has been updated."
+  }
 }
 ```
 
@@ -208,9 +217,9 @@ Test the hierarchical namespace system with your AI client:
 npx uru-mcp --test
 
 # Or ask your AI client:
-"Please list available Uru tools"           # Shows namespace discovery tools
+"Please list available Uru tools"           # Shows namespace list_tools and execute_tool pairs
 "Call gmail_work_kal__list_tools"           # Explore Gmail namespace
-"Send an email using gmail_work_kal__send_email"  # Execute specific tool
+"Use gmail_work_kal__execute_tool to send an email"  # Execute specific tool
 ```
 
 ### 3. Understanding the Hierarchical Workflow

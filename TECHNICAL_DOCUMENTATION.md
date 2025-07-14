@@ -185,17 +185,17 @@ MCP Server.handleNamespaceDiscovery()
 Response: {content: [{type: "text", text: "..."}]}
 ```
 
-### Tool Execution Process
+### Tool Execution Process (Two-Tool Pattern)
 ```
-Client Request: tools/call("gmail_work_kal__send_email", args)
+Client Request: tools/call("gmail_work_kal__execute_tool", {"tool_name": "GMAIL_SEND_EMAIL", "parameters": {...}})
         ↓
-MCP Server.handleNamespacedToolExecution()
+MCP Server.handleNamespaceExecuteTool()
         ↓
 ┌─────────────────────────────────────────┐
-│ 1. Resolve Tool                         │
-│    - Check DynamicToolRegistry          │
-│    - Load namespace if needed           │
-│    - Extract original tool name         │
+│ 1. Parse Request                        │
+│    - Extract namespace from tool name   │
+│    - Validate tool_name parameter       │
+│    - Extract parameters                 │
 └─────────────────────────────────────────┘
         ↓
 ┌─────────────────────────────────────────┐
@@ -407,19 +407,22 @@ await server.start();
 
 ## Usage Workflow Examples
 
-### Email Management Workflow
+### Email Management Workflow (Two-Tool Pattern)
 ```javascript
 // 1. Initial discovery
-tools/list → [gmail_work_kal__list_tools, platform__list_tools, uru_help, ...]
+tools/list → [gmail_work_kal__list_tools, gmail_work_kal__execute_tool, platform__list_tools, platform__execute_tool, uru_help, ...]
 
 // 2. Explore Gmail namespace
 call gmail_work_kal__list_tools → Shows available Gmail tools
 
 // 3. Send email
-call gmail_work_kal__send_email {
-  "to": "colleague@company.com",
-  "subject": "Project Update",
-  "body": "Here's the latest status..."
+call gmail_work_kal__execute_tool {
+  "tool_name": "GMAIL_SEND_EMAIL",
+  "parameters": {
+    "to": "colleague@company.com",
+    "subject": "Project Update",
+    "body": "Here's the latest status..."
+  }
 }
 ```
 
