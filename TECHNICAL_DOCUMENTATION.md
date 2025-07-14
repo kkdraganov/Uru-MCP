@@ -138,7 +138,7 @@ IntelligentToolLoader.getToolsForListing()
 ┌─────────────────────────────────────────┐
 │ 1. Get Discovery Tools                  │
 │    - Fetch apps from proxy              │
-│    - Create namespace.list_tools        │
+│    - Create namespace_list_tools        │
 └─────────────────────────────────────────┘
         ↓
 ┌─────────────────────────────────────────┐
@@ -158,7 +158,7 @@ Response: {tools: [], nextCursor: string}
 
 ### Namespace Exploration Process
 ```
-Client Request: tools/call("gmail_work_kal.list_tools")
+Client Request: tools/call("gmail_work_kal_list_tools")
         ↓
 MCP Server.handleNamespaceDiscovery()
         ↓
@@ -410,13 +410,13 @@ await server.start();
 ### Email Management Workflow
 ```javascript
 // 1. Initial discovery
-tools/list → [gmail_work_kal.list_tools, platform.list_tools, uru_help, ...]
+tools/list → [gmail_work_kal_list_tools, platform_list_tools, uru_help, ...]
 
 // 2. Explore Gmail namespace
-call gmail_work_kal.list_tools → Shows available Gmail tools
+call gmail_work_kal_list_tools → Shows available Gmail tools
 
 // 3. Send email
-call gmail_work_kal.send_email {
+call gmail_work_kal_send_email {
   "to": "colleague@company.com",
   "subject": "Project Update",
   "body": "Here's the latest status..."
@@ -455,7 +455,7 @@ call gmail_work_kal.send_email {
 - Authentication issues
 
 **Solutions**:
-1. Call the namespace discovery tool first: `namespace.list_tools`
+1. Call the namespace discovery tool first: `namespace_list_tools`
 2. Verify exact tool name from discovery response
 3. Check API key permissions and validity
 4. Enable debug mode to see detailed logs

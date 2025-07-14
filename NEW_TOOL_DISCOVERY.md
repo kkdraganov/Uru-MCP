@@ -45,13 +45,13 @@ MCP Client → Uru MCP Server → MCP Proxy → Tool Sources
 **Namespace Format:** `{namespace}.{tool_name}`
 
 **Examples:**
-- `gmail_work_kal.send_email` - Gmail tool in work account namespace
-- `platform.create_workspace` - Platform-specific tool
-- `company.analyze_transcript` - Company n8n workflow tool
-- `slack_team.send_message` - Slack tool in team workspace
+- `gmail_work_kal_send_email` - Gmail tool in work account namespace
+- `platform_create_workspace` - Platform-specific tool
+- `company_analyze_transcript` - Company n8n workflow tool
+- `slack_team_send_message` - Slack tool in team workspace
 
 **Namespace Discovery Tools:**
-- `{namespace}.list_tools` - Discover tools within specific namespace
+- `{namespace}_list_tools` - Discover tools within specific namespace
 - `uru_help` - Global help and namespace discovery
 
 ### Advanced Dynamic Loading Capabilities
