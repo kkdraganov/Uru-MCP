@@ -748,6 +748,12 @@ For custom MCP client integration, the server supports:
 
 ## 📋 Changelog
 
+### Version 3.2.3
+- **Bug Fix**: Fixed namespace parsing issue where underscores were incorrectly converted to spaces
+- **Gmail Integration**: Resolved Gmail tool loading failures for namespaces like `gmail_f7518884`
+- **Response Format**: Verified MCP response format compliance and text field preservation
+- **Version Consistency**: Updated package version to 3.2.3 across all components
+
 ### Version 3.1.0
 - **Version Consistency**: Updated package version to 3.1.0 across all components
 - **Documentation Refinement**: Removed version-specific references for cleaner documentation
