@@ -4,7 +4,7 @@ A Model Context Protocol (MCP) server that provides AI assistants with access to
 
 ## Overview
 
-**Uru MCP v3.2.9** enables AI assistants to work directly with Uru Platform services through the Model Context Protocol. The server provides a standardized, MCP-compliant interface for accessing Uru's AI tools and capabilities via an innovative hierarchical tool namespace system with dynamic loading, intelligent caching, and automatic cleanup.
+**Uru MCP v3.2.10** enables AI assistants to work directly with Uru Platform services through the Model Context Protocol. The server provides a standardized, MCP-compliant interface for accessing Uru's AI tools and capabilities via an innovative hierarchical tool namespace system with dynamic loading, intelligent caching, and automatic cleanup.
 
 The server works seamlessly with MCP client applications such as [Claude Desktop](https://claude.ai/download), [VS Code](https://code.visualstudio.com/docs/copilot/chat/mcp-servers), [Cursor](https://www.cursor.com/), and other MCP-compatible clients.
 
@@ -300,7 +300,7 @@ Edit: `~/.config/Claude/claude_desktop_config.json` (Linux)
   "mcpServers": {
     "uru": {
       "command": "npx",
-      "args": ["uru-mcp"],
+      "args": ["uru-mcp@latest"],
       "env": {
         "URU_API_KEY": "your-auth-token-here"
       }
@@ -747,6 +747,10 @@ For custom MCP client integration, the server supports:
 - **Key Rotation:** Per-request API keys make key rotation easier and more secure
 
 ## 📋 Changelog
+
+### Version 3.2.10
+- **MCP Compatibility**: Fixed startup error with newer MCP SDK by registering notifications/initialized with InitializedNotificationSchema and setNotificationHandler.
+- **Stability**: Verified initialize request/response behavior under Claude mimic test.
 
 ### Version 3.2.9
 - **Execution Timeout**: Increased default tool execution timeout to 3 minutes (180s). You can still override via config.timeout (validated 1s–300s).

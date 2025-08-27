@@ -348,7 +348,7 @@ const config = {
   "mcpServers": {
     "uru": {
       "command": "npx",
-      "args": ["uru-mcp"],
+      "args": ["uru-mcp@latest"],
       "env": {
         "URU_API_KEY": "your-api-key-here",
         "URU_MAX_TOOLS_PER_PAGE": "50",

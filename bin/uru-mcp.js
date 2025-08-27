@@ -23,7 +23,7 @@ const program = new Command();
 program
     .name('uru-mcp')
     .description('Model Context Protocol (MCP) server for Uru Platform integration')
-    .version('3.2.9')
+    .version('3.2.10')
     .option('-k, --key <key>', 'Authentication token')
     .option('-d, --debug', 'Enable debug mode')
     .option(
@@ -213,7 +213,7 @@ function showClaudeConfig() {
         mcpServers: {
             uru: {
                 command: 'npx',
-                args: ['uru-mcp'],
+                args: ['uru-mcp@latest'],
                 env: {
                     URU_API_KEY: 'your-auth-token-here',
                 },
@@ -240,7 +240,7 @@ function showClaudeConfig() {
     const genericConfigExample = {
         uru: {
             command: 'npx',
-            args: ['uru-mcp'],
+            args: ['uru-mcp@latest'],
             env: {
                 URU_API_KEY: 'your-auth-token-here',
             },
