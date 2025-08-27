@@ -4,7 +4,7 @@ A Model Context Protocol (MCP) server that provides AI assistants with access to
 
 ## Overview
 
-**Uru MCP v3.2.10** enables AI assistants to work directly with Uru Platform services through the Model Context Protocol. The server provides a standardized, MCP-compliant interface for accessing Uru's AI tools and capabilities via an innovative hierarchical tool namespace system with dynamic loading, intelligent caching, and automatic cleanup.
+**Uru MCP v3.2.11** enables AI assistants to work directly with Uru Platform services through the Model Context Protocol. The server provides a standardized, MCP-compliant interface for accessing Uru's AI tools and capabilities via an innovative hierarchical tool namespace system with dynamic loading, intelligent caching, and automatic cleanup.
 
 The server works seamlessly with MCP client applications such as [Claude Desktop](https://claude.ai/download), [VS Code](https://code.visualstudio.com/docs/copilot/chat/mcp-servers), [Cursor](https://www.cursor.com/), and other MCP-compatible clients.
 
@@ -748,7 +748,7 @@ For custom MCP client integration, the server supports:
 
 ## 📋 Changelog
 
-### Version 3.2.10
+### Version 3.2.11
 - **MCP Compatibility**: Fixed startup error with newer MCP SDK by registering notifications/initialized with InitializedNotificationSchema and setNotificationHandler.
 - **Stability**: Verified initialize request/response behavior under Claude mimic test.
 

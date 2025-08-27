@@ -23,7 +23,7 @@ const program = new Command();
 program
     .name('uru-mcp')
     .description('Model Context Protocol (MCP) server for Uru Platform integration')
-    .version('3.2.10')
+    .version('3.2.11')
     .option('-k, --key <key>', 'Authentication token')
     .option('-d, --debug', 'Enable debug mode')
     .option(
