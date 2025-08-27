@@ -1,61 +1,61 @@
 {
-  "name": "uru-mcp",
-  "version": "3.2.8",
-  "description": "MCP-compliant server with hierarchical tool namespacing for Uru Platform integration",
-  "main": "index.js",
-  "bin": {
-    "uru-mcp": "./bin/uru-mcp.js"
-  },
-  "scripts": {
-    "start": "node index.js",
-    "test": "node test.js",
-    "postinstall": "node scripts/postinstall.js"
-  },
-  "keywords": [
-    "mcp",
-    "claude",
-    "uru",
-    "hierarchical",
-    "namespace",
-    "ai",
-    "tools",
-    "desktop",
-    "protocol-compliant"
-  ],
-  "author": "Uru Enterprises LLC",
-  "license": "Apache-2.0",
-  "homepage": "https://github.com/kkdraganov/Uru-MCP#readme",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/kkdraganov/Uru-MCP.git"
-  },
-  "bugs": {
-    "url": "https://github.com/kkdraganov/Uru-MCP/issues"
-  },
-  "engines": {
-    "node": ">=18.0.0"
-  },
-  "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.13.0",
-    "axios": "^1.10.0",
-    "commander": "^12.0.0",
-    "dotenv": "^16.5.0",
-    "chalk": "^4.1.2",
-    "ora": "^5.4.1",
-    "inquirer": "^8.2.6",
-    "fs-extra": "^11.2.0"
-  },
-  "files": [
-    "bin/",
-    "lib/",
-    "config/",
-    "scripts/",
-    "index.js",
-    "README.md",
-    "LICENSE"
-  ],
-  "preferGlobal": false,
-  "publishConfig": {
-    "access": "public"
-  }
+    "name": "uru-mcp",
+    "version": "3.2.9",
+    "description": "MCP-compliant server with hierarchical tool namespacing for Uru Platform integration",
+    "main": "index.js",
+    "bin": {
+        "uru-mcp": "./bin/uru-mcp.js"
+    },
+    "scripts": {
+        "start": "node index.js",
+        "test": "node test.js",
+        "postinstall": "node scripts/postinstall.js"
+    },
+    "keywords": [
+        "mcp",
+        "claude",
+        "uru",
+        "hierarchical",
+        "namespace",
+        "ai",
+        "tools",
+        "desktop",
+        "protocol-compliant"
+    ],
+    "author": "Uru Enterprises LLC",
+    "license": "Apache-2.0",
+    "homepage": "https://github.com/kkdraganov/Uru-MCP#readme",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/kkdraganov/Uru-MCP.git"
+    },
+    "bugs": {
+        "url": "https://github.com/kkdraganov/Uru-MCP/issues"
+    },
+    "engines": {
+        "node": ">=18.0.0"
+    },
+    "dependencies": {
+        "@modelcontextprotocol/sdk": "^1.13.0",
+        "axios": "^1.10.0",
+        "commander": "^12.0.0",
+        "dotenv": "^16.5.0",
+        "chalk": "^4.1.2",
+        "ora": "^5.4.1",
+        "inquirer": "^8.2.6",
+        "fs-extra": "^11.2.0"
+    },
+    "files": [
+        "bin/",
+        "lib/",
+        "config/",
+        "scripts/",
+        "index.js",
+        "README.md",
+        "LICENSE"
+    ],
+    "preferGlobal": false,
+    "publishConfig": {
+        "access": "public"
+    }
 }
