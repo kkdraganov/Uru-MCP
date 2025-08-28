@@ -357,7 +357,7 @@ The server uses JSON-RPC 2.0 over STDIO. All communication follows the MCP speci
 ```json
 {
   "name": "uru-mcp",
-      "version": "2.0.0",
+      "version": "3.2.12",
   "title": "Uru Platform MCP Server",
   "description": "Model Context Protocol server providing access to Uru Platform AI tools and capabilities"
 }
@@ -748,9 +748,9 @@ For custom MCP client integration, the server supports:
 
 ## 📋 Changelog
 
-### Version 3.2.11
-- **MCP Compatibility**: Fixed startup error with newer MCP SDK by registering notifications/initialized with InitializedNotificationSchema and setNotificationHandler.
-- **Stability**: Verified initialize request/response behavior under Claude mimic test.
+### Version 3.2.12
+- Version synchronization across package.json, CLI banner, server info, and documentation
+- No functional changes; release ensures consistent versioning for publish
 
 ### Version 3.2.9
 - **Execution Timeout**: Increased default tool execution timeout to 3 minutes (180s). You can still override via config.timeout (validated 1s–300s).
