@@ -1,10 +1,10 @@
 {
     "name": "uru-mcp",
-    "version": "3.2.13",
+    "version": "3.2.14",
     "description": "MCP-compliant server with hierarchical tool namespacing for Uru Platform integration",
     "main": "index.js",
     "bin": {
-        "uru-mcp": "./bin/uru-mcp.js"
+        "uru-mcp": "bin/uru-mcp.js"
     },
     "scripts": {
         "start": "node index.js",
