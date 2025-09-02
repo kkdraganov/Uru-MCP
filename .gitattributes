@@ -1,0 +1,5 @@
+# Ensure executable scripts and JS files use LF in the repository and published tarball
+bin/* text eol=lf
+*.js text eol=lf
+*.sh text eol=lf
+
