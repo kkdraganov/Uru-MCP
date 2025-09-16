@@ -46,5 +46,26 @@ function normalizeFile(file) {
             console.error('[WARNING] Failed to normalize', file, e && e.message);
         }
     }
-})();
 
+    // Ensure CLI entry point is executable on POSIX systems before packing
+    try {
+        const binPath = path.join(root, 'bin', 'uru-mcp.js');
+        if (fs.existsSync(binPath)) {
+            const stat = fs.statSync(binPath);
+            // Set mode to 0755 if not already executable
+            const desired = 0o755;
+            const current = stat.mode & 0o777;
+            if (current !== desired) {
+                fs.chmodSync(binPath, desired);
+                // eslint-disable-next-line no-console
+                console.log('[INFO] Set executable permissions on bin/uru-mcp.js');
+            }
+        }
+    } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error(
+            '[WARNING] Could not set executable bit on bin/uru-mcp.js:',
+            e && e.message
+        );
+    }
+})();

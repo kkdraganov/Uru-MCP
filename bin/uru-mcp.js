@@ -23,7 +23,7 @@ const program = new Command();
 program
     .name('uru-mcp')
     .description('Model Context Protocol (MCP) server for Uru Platform integration')
-    .version('3.3.2')
+    .version('3.4.1')
     .option('-k, --key <key>', 'Authentication token')
     .option('-d, --debug', 'Enable debug mode')
     .option(
@@ -66,21 +66,21 @@ async function main() {
 
         // Handle special commands (these can use console.log since they don't run the MCP server)
         if (options.setup) {
-            console.log(chalk.blue.bold('🚀 Uru MCP'));
+            console.log(chalk.blue.bold('Uru MCP'));
             console.log(chalk.gray('Connecting Uru Platform to Claude Desktop\n'));
             await runSetupWizard();
             return;
         }
 
         if (options.test) {
-            console.log(chalk.blue.bold('🚀 Uru MCP'));
+            console.log(chalk.blue.bold('Uru MCP'));
             console.log(chalk.gray('Connecting Uru Platform to Claude Desktop\n'));
             await testConnection();
             return;
         }
 
         if (options.claudeConfig) {
-            console.log(chalk.blue.bold('🚀 Uru MCP'));
+            console.log(chalk.blue.bold('Uru MCP'));
             console.log(chalk.gray('Connecting Uru Platform to Claude Desktop\n'));
             showClaudeConfig();
             return;
@@ -100,7 +100,7 @@ async function main() {
 
         // Validate configuration - token is now optional
         if (!config.token) {
-            console.error(chalk.yellow('⚠️  No authentication token configured'));
+            console.error(chalk.yellow('[WARNING] No authentication token configured'));
             console.error(chalk.gray('   API key must be provided in tool arguments'));
             console.error(
                 chalk.gray(
@@ -111,7 +111,7 @@ async function main() {
 
         // Start MCP server (all logging will go to stderr)
         if (config.debug) {
-            console.error(chalk.green('✅ Starting Uru MCP Server...'));
+            console.error(chalk.green('[INFO] Starting Uru MCP Server...'));
             console.error(chalk.gray(`   Proxy: ${config.proxyUrl}`));
             console.error(
                 chalk.gray(
@@ -129,7 +129,7 @@ async function main() {
         const server = new UruMCPServer(config);
         await server.start();
     } catch (error) {
-        console.error(chalk.red('❌ Error:'), error.message);
+        console.error(chalk.red('[ERROR] Error:'), error.message);
         if (options.debug) {
             console.error(chalk.gray(error.stack));
         }
@@ -226,11 +226,11 @@ function showClaudeConfig() {
     console.log(chalk.gray('Claude Desktop config file locations:'));
     console.log(
         chalk.gray(
-            '• macOS: ~/Library/Application Support/Claude/claude_desktop_config.json'
+            '- macOS: ~/Library/Application Support/Claude/claude_desktop_config.json'
         )
     );
-    console.log(chalk.gray('• Windows: %APPDATA%\\Claude\\claude_desktop_config.json'));
-    console.log(chalk.gray('• Linux: ~/.config/Claude/claude_desktop_config.json'));
+    console.log(chalk.gray('- Windows: %APPDATA%\\Claude\\claude_desktop_config.json'));
+    console.log(chalk.gray('- Linux: ~/.config/Claude/claude_desktop_config.json'));
 
     console.log(chalk.cyan.bold('\nOther MCP Clients:'));
     console.log(
@@ -252,7 +252,7 @@ function showClaudeConfig() {
 
 // Handle process signals gracefully
 process.on('SIGINT', () => {
-    console.log(chalk.yellow('\n👋 Shutting down Uru MCP...'));
+    console.log(chalk.yellow('\nShutting down Uru MCP...'));
     process.exit(0);
 });
 
@@ -263,6 +263,6 @@ process.on('SIGTERM', () => {
 
 // Run the main function
 main().catch(error => {
-    console.error(chalk.red('❌ Unexpected error:'), error.message);
+    console.error(chalk.red('[ERROR] Unexpected error:'), error.message);
     process.exit(1);
 });
