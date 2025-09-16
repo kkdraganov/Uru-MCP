@@ -168,10 +168,27 @@ function ensureBinExecutable() {
             // eslint-disable-next-line no-console
             console.log('[INFO] Ensured executable permissions on bin/uru-mcp.js');
         }
+        // Also ensure the NPX/NPM shim is executable on POSIX (macOS/Linux)
+        if (process.platform !== 'win32') {
+            const shimPath = path.join(
+                __dirname,
+                '..',
+                'node_modules',
+                '.bin',
+                'uru-mcp'
+            );
+            if (fs.existsSync(shimPath)) {
+                fs.chmodSync(shimPath, 0o755);
+                // eslint-disable-next-line no-console
+                console.log(
+                    '[INFO] Ensured executable permissions on .bin/uru-mcp shim'
+                );
+            }
+        }
     } catch (e) {
         // eslint-disable-next-line no-console
         console.warn(
-            '[WARNING] Could not set executable bit on bin/uru-mcp.js:',
+            '[WARNING] Could not set executable bit on bin or shim:',
             e && e.message
         );
     }
