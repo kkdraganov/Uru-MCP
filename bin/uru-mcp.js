@@ -28,7 +28,7 @@ program
     .option('-d, --debug', 'Enable debug mode')
     .option(
         '-p, --proxy-url <url>',
-        'MCP proxy URL (default: https://mcp.uruenterprises.com)'
+        'MCP proxy URL (default: https://mcp.uruintelligence.com)'
     )
     .option('--setup', 'Run interactive setup wizard')
     .option('--test', 'Test connection to backend')
@@ -46,7 +46,7 @@ Examples:
 Environment Variables:
   URU_API_KEY        Authentication API key (required)
   URU_DEBUG          Enable debug mode (true/false)
-  URU_PROXY_URL      MCP proxy URL (default: https://mcp.uruenterprises.com)
+  URU_PROXY_URL      MCP proxy URL (default: https://mcp.uruintelligence.com)
 
 MCP Protocol:
   Transport: STDIO (JSON-RPC 2.0)
@@ -141,7 +141,7 @@ async function runSetupWizard() {
     const inquirer = require('inquirer');
 
     console.log(chalk.yellow('🔧 Uru MCP Setup Wizard\n'));
-    console.log(chalk.gray('Proxy URL: https://mcp.uruenterprises.com (fixed)\n'));
+    console.log(chalk.gray('Proxy URL: https://mcp.uruintelligence.com (fixed)\n'));
 
     const answers = await inquirer.prompt([
         {

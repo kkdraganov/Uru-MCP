@@ -154,7 +154,7 @@ call gmail_work_kal__execute_tool {
 - **Scope**: Different tools may require different permission levels
 
 **Network Configuration**
-- **Proxy URL**: Defaults to `https://mcp.uruenterprises.com`
+- **Proxy URL**: Defaults to `https://mcp.uruintelligence.com`
 - **Development**: Use `http://localhost:3001` for local development
 - **Timeout**: Configurable request timeout (default: 30 seconds for discovery, 60 seconds for execution)
 
@@ -176,7 +176,7 @@ URU_API_KEY="your-uru-platform-token"
 
 # Optional
 URU_DEBUG="true"                                    # Enable debug logging
-URU_PROXY_URL="https://mcp.uruenterprises.com"    # MCP proxy endpoint
+URU_PROXY_URL="https://mcp.uruintelligence.com"    # MCP proxy endpoint
 ```
 
 ## ⚡ Quick Start
@@ -285,7 +285,7 @@ npx uru-mcp --key your-api-key-here
 #### Optional
 
 - `URU_DEBUG`: Enable debug mode (`true` or `false`, defaults to `false`)
-- `URU_PROXY_URL`: MCP proxy URL (defaults to `https://mcp.uruenterprises.com`, use `http://localhost:3001` for development)
+- `URU_PROXY_URL`: MCP proxy URL (defaults to `https://mcp.uruintelligence.com`, use `http://localhost:3001` for development)
 
 ### 3. Client Integration
 
@@ -537,7 +537,7 @@ npx uru-mcp --help
 **❌ "Cannot connect to proxy"**
 - Verify your internet connection
 - Test with: `npx uru-mcp --test`
-- Check if `https://mcp.uruenterprises.com` is accessible
+- Check if `https://mcp.uruintelligence.com` is accessible
 
 **❌ "Authentication failed"**
 - Verify your token is correct and hasn't expired
@@ -820,7 +820,7 @@ For custom MCP client integration, the server supports:
 ## 🔗 Related Resources
 
 - [Model Context Protocol Documentation](https://github.com/modelcontextprotocol)
-- [Uru Platform Documentation](https://uruenterprises.com)
+- [Uru Platform Documentation](https://uruintelligence.com)
 - [MCP Server Examples](https://github.com/modelcontextprotocol/servers)
 
 ## 📄 License
