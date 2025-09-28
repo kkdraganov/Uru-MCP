@@ -16,7 +16,7 @@ The Uru MCP is a standalone, distributable npm package that provides a Model Con
 - **Interactive Setup**: Guided configuration wizard with advanced options
 - **Comprehensive Error Handling**: User-friendly error messages and debugging
 - **Multi-Client Support**: Works with Claude Desktop, VS Code, Cursor, and other MCP clients
-- **Fixed Backend URL**: Always connects to `https://mcp.uruenterprises.com`
+- **Fixed Backend URL**: Always connects to `https://mcp.uruintelligence.com`
 - **Performance Optimization**: TTL-based cleanup, usage tracking, and parallel loading
 
 ## 🚀 Distribution Methods
@@ -107,7 +107,7 @@ npm audit fix
 
 ## 🌐 Backend Requirements
 
-The proxy at `https://mcp.uruenterprises.com` must support:
+The proxy at `https://mcp.uruintelligence.com` must support:
 
 - **Health Check**: `GET /health`
 - **Tool Listing**: `POST /mcp/tools/list` (MCP protocol)

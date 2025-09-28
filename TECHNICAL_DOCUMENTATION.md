@@ -299,7 +299,7 @@ All responses follow MCP specification exactly:
 ```bash
 # Core configuration
 URU_API_KEY="your-api-key"                  # Authentication token
-URU_PROXY_URL="https://mcp.uruenterprises.com"  # MCP proxy endpoint
+URU_PROXY_URL="https://mcp.uruintelligence.com"  # MCP proxy endpoint
 URU_DEBUG="true"                            # Enable debug logging
 
 # Hierarchical tool configuration
@@ -396,7 +396,7 @@ const UruMCPServer = require('uru-mcp');
 
 const server = new UruMCPServer({
   token: 'your-api-key',
-  proxyUrl: 'https://mcp.uruenterprises.com',
+  proxyUrl: 'https://mcp.uruintelligence.com',
   maxToolsPerPage: 50,
   preloadNamespaces: ['platform', 'company'],
   debug: false
