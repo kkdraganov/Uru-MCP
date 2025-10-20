@@ -186,7 +186,7 @@ class UruMCPTestClient extends EventEmitter {
           ...process.env,
           URU_API_KEY: this.key,
           URU_DEBUG: this.debug ? 'true' : 'false',
-          URU_PROXY_URL: this.useLocal ? 'https://localhost:3001' : 'https://mcp.uruenterprises.com'
+          URU_PROXY_URL: this.useLocal ? 'http://localhost:3001' : 'https://mcp.uruenterprises.com'
         },
         stderr: 'pipe'
       });
@@ -1150,7 +1150,7 @@ async function runTests(key, options = {}) {
     console.log(chalk.cyan(`📋 Test Mode: ${options.testMode || 'comprehensive'}`));
     console.log(chalk.cyan(`🔧 Debug Mode: ${options.debug ? 'enabled' : 'disabled'}`));
     console.log(chalk.cyan(`⏱️ Timeout: ${options.timeout || 30000}ms`));
-    console.log(chalk.cyan(`🌐 Proxy URL: ${options.local ? 'https://localhost:3001' : 'https://mcp.uruenterprises.com'}\n`));
+    console.log(chalk.cyan(`🌐 Proxy URL: ${options.local ? 'http://localhost:3001' : 'https://mcp.uruenterprises.com'}\n`));
 
     // Phase 1: Connection and Protocol Tests
     console.log(chalk.yellow.bold('📡 PHASE 1: CONNECTION & PROTOCOL VALIDATION'));
