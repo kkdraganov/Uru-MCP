@@ -490,11 +490,12 @@ class ToolNamespaceManager {
      * Fetch namespace metadata from proxy with connection information
      * @param {string} apiKey - Optional API key to use for this request
      */
-    async fetchNamespacesFromProxy(apiKey = null) {
+    async fetchNamespacesFromProxy(apiKey = null, options = {}) {
+        const { forceRefresh = false } = options || {};
         try {
             // Use cached namespaces if available and fresh
             const cachedNamespaces = this.getCachedNamespaces();
-            if (cachedNamespaces) {
+            if (!forceRefresh && cachedNamespaces) {
                 this.log(`✅ Returning ${cachedNamespaces.length} cached namespaces`);
                 return cachedNamespaces;
             }
@@ -580,6 +581,12 @@ class ToolNamespaceManager {
      * Get cached namespaces if available and fresh
      */
     getCachedNamespaces() {
+        if (
+            this.namespacesCache.data &&
+            Date.now() - this.namespacesCache.lastFetch < this.namespacesCache.maxAge
+        ) {
+            return this.namespacesCache.data;
+        }
         return null;
     }
 
