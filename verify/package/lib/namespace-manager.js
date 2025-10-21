@@ -580,12 +580,6 @@ class ToolNamespaceManager {
      * Get cached namespaces if available and fresh
      */
     getCachedNamespaces() {
-        if (
-            this.namespacesCache.data &&
-            Date.now() - this.namespacesCache.lastFetch < this.namespacesCache.maxAge
-        ) {
-            return this.namespacesCache.data;
-        }
         return null;
     }
 
