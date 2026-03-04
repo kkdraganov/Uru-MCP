@@ -4,7 +4,7 @@ A Model Context Protocol (MCP) server that provides AI assistants with access to
 
 ## Overview
 
-**Uru MCP v3.2.15** enables AI assistants to work directly with Uru Platform services through the Model Context Protocol. The server provides a standardized, MCP-compliant interface for accessing Uru's AI tools and capabilities via an innovative hierarchical tool namespace system with dynamic loading, intelligent caching, and automatic cleanup.
+**Uru MCP v3.6.1** enables AI assistants to work directly with Uru Platform services through the Model Context Protocol. The server provides a standardized, MCP-compliant interface for accessing Uru's AI tools and capabilities via an innovative hierarchical tool namespace system with dynamic loading, intelligent caching, and automatic cleanup.
 
 The server works seamlessly with MCP client applications such as [Claude Desktop](https://claude.ai/download), [VS Code](https://code.visualstudio.com/docs/copilot/chat/mcp-servers), [Cursor](https://www.cursor.com/), and other MCP-compatible clients.
 
@@ -154,7 +154,7 @@ call gmail_work_kal__execute_tool {
 - **Scope**: Different tools may require different permission levels
 
 **Network Configuration**
-- **Proxy URL**: Defaults to `https://mcp.uruenterprises.com`
+- **Proxy URL**: Defaults to `https://mcp.uruintelligence.com`
 - **Development**: Use `http://localhost:3001` for local development
 - **Timeout**: Configurable request timeout (default: 30 seconds for discovery, 60 seconds for execution)
 
@@ -162,6 +162,7 @@ call gmail_work_kal__execute_tool {
 - **Tool Cache TTL**: 30 seconds (configurable via `cacheTimeout`)
 - **App Cache TTL**: 30 seconds (configurable via `cacheTimeout`)
 - **Benefits**: Reduces API calls and improves response times
+- **Change Detection**: Uses lightweight version polling (`/tools/sync/version`) with ETag/304, not full namespace polling
 
 **MCP Client Compatibility**
 - **Protocol Version**: MCP 2025-06-18 specification
@@ -176,7 +177,8 @@ URU_API_KEY="your-uru-platform-token"
 
 # Optional
 URU_DEBUG="true"                                    # Enable debug logging
-URU_PROXY_URL="https://mcp.uruenterprises.com"    # MCP proxy endpoint
+URU_PROXY_URL="https://mcp.uruintelligence.com"    # MCP proxy endpoint
+URU_TOOL_SYNC_POLL_MS="60000"                      # Tools version poll interval (ms)
 ```
 
 ## ⚡ Quick Start
@@ -285,7 +287,8 @@ npx uru-mcp --key your-api-key-here
 #### Optional
 
 - `URU_DEBUG`: Enable debug mode (`true` or `false`, defaults to `false`)
-- `URU_PROXY_URL`: MCP proxy URL (defaults to `https://mcp.uruenterprises.com`, use `http://localhost:3001` for development)
+- `URU_PROXY_URL`: MCP proxy URL (defaults to `https://mcp.uruintelligence.com`, use `http://localhost:3001` for development)
+- `URU_TOOL_SYNC_POLL_MS`: Poll interval for tools version checks (defaults to `60000`)
 
 ### 3. Client Integration
 
@@ -357,7 +360,7 @@ The server uses JSON-RPC 2.0 over STDIO. All communication follows the MCP speci
 ```json
 {
   "name": "uru-mcp",
-      "version": "3.2.15",
+  "version": "3.6.1",
   "title": "Uru Platform MCP Server",
   "description": "Model Context Protocol server providing access to Uru Platform AI tools and capabilities"
 }
@@ -537,7 +540,7 @@ npx uru-mcp --help
 **❌ "Cannot connect to proxy"**
 - Verify your internet connection
 - Test with: `npx uru-mcp --test`
-- Check if `https://mcp.uruenterprises.com` is accessible
+- Check if `https://mcp.uruintelligence.com` is accessible
 
 **❌ "Authentication failed"**
 - Verify your token is correct and hasn't expired
@@ -724,7 +727,8 @@ You can manually edit this file if needed:
 {
   "token": "your-auth-token-here",
   "debug": false,
-  "cacheTimeout": 30000
+  "cacheTimeout": 30000,
+  "toolSyncPollMs": 60000
 }
 ```
 
@@ -747,6 +751,48 @@ For custom MCP client integration, the server supports:
 - **Key Rotation:** Per-request API keys make key rotation easier and more secure
 
 ## 📋 Changelog
+
+### Version 3.6.1
+- Added explicit `readOnlyHint: false` annotation to namespace execute tools for consistent MCP client read/write grouping behavior
+- Synchronized package, CLI, server metadata, and docs to version 3.6.1
+
+### Version 3.6.0
+- Removed namespace signature polling and replaced it with version-based sync checks (`/tools/sync/version` with ETag/304)
+- Added min-version-aware namespace refresh behavior with bounded retry on `TOOLS_NOT_READY`
+- Added explicit `URU_TOOL_SYNC_POLL_MS` / `toolSyncPollMs` configuration
+- Synchronized package, CLI, server metadata, and docs to version 3.6.0
+
+### Version 3.5.1
+- Version bump to 3.5.1 for latest package updates
+- Complete version synchronization across all package files
+- No breaking changes; maintains full backward compatibility
+
+### Version 3.5.0
+- Updated package with latest improvements
+- Complete version synchronization across all package files
+- No breaking changes; maintains full backward compatibility
+
+### Version 3.4.9
+- Version bump to 3.4.9 for latest package updates
+- Complete version synchronization across all package files
+- No breaking changes; maintains full backward compatibility
+
+### Version 3.4.8
+- Updated mcp-server.js with latest improvements and bug fixes
+- Complete version synchronization across all package files
+- No breaking changes; maintains full backward compatibility
+
+### Version 3.4.7
+- Version bump to 3.4.7 for latest package updates
+- Fixed version inconsistency in bin/uru-mcp.js (was 3.4.5)
+- Complete version synchronization across all package files
+- No functional changes; release ensures consistent versioning
+
+### Version 3.4.6
+- Complete version synchronization across all package files
+- Updated package.json, lib/mcp-server.js, and README.md to version 3.4.6
+- Fixed version inconsistencies (mcp-server.js was 3.4.2, README was 3.2.15)
+- No functional changes; release ensures consistent versioning for publish
 
 ### Version 3.2.15
 - Version synchronization across package.json, CLI banner, server info, and documentation
@@ -820,7 +866,7 @@ For custom MCP client integration, the server supports:
 ## 🔗 Related Resources
 
 - [Model Context Protocol Documentation](https://github.com/modelcontextprotocol)
-- [Uru Platform Documentation](https://uruenterprises.com)
+- [Uru Platform Documentation](https://uruintelligence.com)
 - [MCP Server Examples](https://github.com/modelcontextprotocol/servers)
 
 ## 📄 License

@@ -21,6 +21,79 @@ const chalk = require('chalk');
 const { DynamicToolRegistry, ToolNamespaceManager } = require('./namespace-manager');
 const { IntelligentToolLoader } = require('./tool-loader');
 
+/**
+ * Truncate tool result to prevent Claude Desktop conversation overflow
+ * Claude no longer truncates at 100k characters, so we must do it ourselves
+ * This ONLY applies to Claude Desktop via MCP - platform chat and automations are unaffected
+ *
+ * @param {Object} result - MCP-compliant result with content array
+ * @param {number} maxChars - Maximum characters (default 100000)
+ * @returns {Object} Truncated result in same format
+ */
+function truncateToolResult(result, maxChars = 100000) {
+    if (!result || !result.content || !Array.isArray(result.content)) {
+        return result;
+    }
+
+    // Calculate total character count across all content items
+    let totalChars = 0;
+    for (const item of result.content) {
+        if (item.type === 'text' && item.text) {
+            totalChars += item.text.length;
+        }
+    }
+
+    // If under limit, return as-is
+    if (totalChars <= maxChars) {
+        return result;
+    }
+
+    // Need to truncate - process content items
+    const truncatedContent = [];
+    let remainingChars = maxChars - 500; // Reserve 500 chars for truncation message
+    let truncatedItems = 0;
+    let originalSize = totalChars;
+
+    for (const item of result.content) {
+        if (item.type === 'text' && item.text) {
+            if (remainingChars > 0) {
+                if (item.text.length <= remainingChars) {
+                    // Item fits completely
+                    truncatedContent.push(item);
+                    remainingChars -= item.text.length;
+                } else {
+                    // Truncate this item
+                    const truncatedText = item.text.substring(0, remainingChars);
+                    truncatedContent.push({
+                        type: 'text',
+                        text: truncatedText
+                    });
+                    remainingChars = 0;
+                    truncatedItems++;
+                }
+            } else {
+                truncatedItems++;
+            }
+        } else {
+            // Non-text items pass through
+            truncatedContent.push(item);
+        }
+    }
+
+    // Add truncation notice
+    const truncationNotice = `\n\n[RESULT TRUNCATED]\nOriginal size: ${originalSize.toLocaleString()} characters\nTruncated to: ${maxChars.toLocaleString()} characters\nContent items truncated: ${truncatedItems}\n\nNote: This truncation only applies to Claude Desktop. The full result is available in the Uru platform.`;
+
+    truncatedContent.push({
+        type: 'text',
+        text: truncationNotice
+    });
+
+    return {
+        ...result,
+        content: truncatedContent
+    };
+}
+
 class UruMCPServer {
     constructor(config) {
         // Validate configuration
@@ -31,11 +104,14 @@ class UruMCPServer {
         this.token = config.token;
         this.debug = config.debug;
         this.isConnected = false;
+        this._toolsVersionMonitor = null;
+        this._toolsSyncEtag = null;
+        this._lastToolsVersion = 0;
 
-        this.log('🔗 Uru MCP Server initializing with hierarchical namespaces...');
-        this.log(`📡 Proxy URL: ${this.proxyUrl}`);
+        this.log('[INFO] Uru MCP Server initializing with hierarchical namespaces...');
+        this.log(`[INFO] Proxy URL: ${this.proxyUrl}`);
         this.log(
-            `🔑 Token: ${this.token ? this.token.substring(0, 20) + '...' : 'none'}`
+            `[INFO] Token: ${this.token ? this.token.substring(0, 20) + '...' : 'none'}`
         );
 
         // Initialize hierarchical namespace components
@@ -69,7 +145,7 @@ class UruMCPServer {
         this.server = new Server(
             {
                 name: 'uru-mcp',
-                version: '3.2.15',
+                version: '3.6.1',
                 title: 'Uru Platform MCP Server',
                 description:
                     'MCP-compliant server with hierarchical tool namespacing for efficient management of 400+ tools',
@@ -140,6 +216,13 @@ This hierarchical approach provides full MCP compliance while efficiently managi
         ) {
             throw new Error('Cache timeout must be a positive number');
         }
+
+        if (
+            config.toolSyncPollMs &&
+            (typeof config.toolSyncPollMs !== 'number' || config.toolSyncPollMs <= 0)
+        ) {
+            throw new Error('Tool sync poll interval must be a positive number');
+        }
     }
 
     /**
@@ -178,38 +261,44 @@ This hierarchical approach provides full MCP compliance while efficiently managi
                     this.log('✅ Proxy connection successful');
 
                     // Clear all caches on startup to ensure fresh tools
-                    this.log('🧹 Clearing caches for fresh tool discovery...');
+                    this.log('[INFO] Clearing caches for fresh tool discovery...');
                     this.toolRegistry.clearCaches();
                     this.namespaceManager.clearCaches();
                     this.toolLoader.clearCaches();
                     this.log('✅ Caches cleared - fresh tools will be loaded');
 
                     // Pre-warm namespace cache for Claude Desktop performance
-                    this.log('🔥 Pre-warming namespace cache...');
+                    this.log('[INFO] Pre-warming namespace cache...');
                     try {
                         await this.namespaceManager.fetchNamespacesFromProxy();
                         this.log('✅ Namespace cache pre-warmed successfully');
                     } catch (cacheError) {
                         this.log(
-                            `⚠️ Cache pre-warming failed: ${cacheError.message}`,
+                            `[WARNING]: Cache pre-warming failed: ${cacheError.message}`,
                             'warn'
                         );
                     }
                 } catch (error) {
                     this.log(
-                        `⚠️ Proxy connection test failed: ${error.message}`,
+                        `[WARNING]: Proxy connection test failed: ${error.message}`,
                         'warn'
                     );
                     this.log(
-                        '⚠️ Server will start anyway - tools may fail until proxy is available',
+                        '[WARNING]: Server will start anyway - tools may fail until proxy is available',
                         'warn'
                     );
                 }
+
+                // Start lightweight tools version monitor (ETag/304 aware),
+                // even if initial proxy checks fail, so the server can recover automatically.
+                this.startToolsVersionMonitor();
             } else {
-                this.log('⚠️ Running in test mode - skipping proxy connection test');
+                this.log(
+                    '[WARNING]: Running in test mode - skipping proxy connection test'
+                );
             }
 
-            this.log('🚀 Starting MCP server...');
+            this.log('[INFO] Starting MCP server...');
 
             // Create transport and start server
             const transport = new StdioServerTransport();
@@ -218,9 +307,9 @@ This hierarchical approach provides full MCP compliance while efficiently managi
             // Mark as connected after successful connection
             this.isConnected = true;
 
-            this.log('✅ MCP server started successfully');
+            this.log('[INFO] MCP server started successfully');
         } catch (error) {
-            this.log(`❌ Failed to start server: ${error.message}`);
+            this.log(`[ERROR]: Failed to start server: ${error.message}`);
             throw error;
         }
     }
@@ -946,6 +1035,9 @@ This hierarchical approach provides full MCP compliance while efficiently managi
         apiKey = null,
         namespace = null
     ) {
+        // Connection metadata for routing (declared outside try so catch can reference it)
+        let connectionMetadata = null;
+
         try {
             this.log(
                 `🔧 Executing tool '${toolName}' in app '${appName}' (namespace: ${
@@ -1053,7 +1145,7 @@ This hierarchical approach provides full MCP compliance while efficiently managi
                     responseText = JSON.stringify(response.data, null, 2);
                 }
 
-                return {
+                const result = {
                     content: [
                         {
                             type: 'text',
@@ -1061,9 +1153,12 @@ This hierarchical approach provides full MCP compliance while efficiently managi
                         },
                     ],
                 };
+
+                // Truncate result for Claude Desktop to prevent conversation overflow
+                return truncateToolResult(result);
             } else {
                 // Fallback for non-standard response
-                return {
+                const result = {
                     content: [
                         {
                             type: 'text',
@@ -1074,6 +1169,9 @@ This hierarchical approach provides full MCP compliance while efficiently managi
                         },
                     ],
                 };
+
+                // Truncate result for Claude Desktop to prevent conversation overflow
+                return truncateToolResult(result);
             }
         } catch (error) {
             // Enhanced error logging for debugging
@@ -1217,6 +1315,85 @@ This hierarchical approach provides full MCP compliance while efficiently managi
 
             return enhancedTool;
         });
+    }
+
+    /**
+     * Poll authoritative tools version endpoint and notify clients on changes.
+     * This replaces periodic full /namespaces polling.
+     */
+    startToolsVersionMonitor() {
+        try {
+            if (this._toolsVersionMonitor) {
+                clearInterval(this._toolsVersionMonitor);
+            }
+            const intervalMs = this.config?.toolSyncPollMs || 60000;
+
+            const poll = async () => {
+                try {
+                    await this._pollToolsVersion();
+                } catch (err) {
+                    this.log(
+                        `[WARN] Tools version poll failed: ${err.message}`,
+                        'warn'
+                    );
+                }
+            };
+
+            void poll();
+            this._toolsVersionMonitor = setInterval(() => {
+                void poll();
+            }, intervalMs);
+            this.log(
+                `[INFO] Tools version monitor started (interval=${intervalMs}ms)`
+            );
+        } catch (e) {
+            this.log(
+                `[WARN] Failed to start tools version monitor: ${e.message}`,
+                'warn'
+            );
+        }
+    }
+
+    async _pollToolsVersion() {
+        /** @type {Record<string, string>} */
+        const headers = this.getAuthHeaders();
+        if (this._toolsSyncEtag) {
+            headers['If-None-Match'] = this._toolsSyncEtag;
+        }
+
+        const response = await axios.get(`${this.proxyUrl}/tools/sync/version`, {
+            timeout: this.config.timeout || 30000,
+            headers,
+            validateStatus: status => status === 200 || status === 304,
+        });
+
+        if (response.status === 304) {
+            return;
+        }
+
+        const etag = response.headers?.etag;
+        if (etag) {
+            this._toolsSyncEtag = etag;
+        }
+
+        const parsedVersion = Number(response.data?.version || 0);
+        const version =
+            Number.isFinite(parsedVersion) && parsedVersion >= 0
+                ? parsedVersion
+                : 0;
+
+        if (this._lastToolsVersion > 0 && version > this._lastToolsVersion) {
+            this.log(
+                `[INFO] Detected tools version change ${this._lastToolsVersion} -> ${version}; notifying clients`
+            );
+            this.toolRegistry.clearCaches();
+            this.namespaceManager.clearCaches();
+            this.toolLoader.clearCaches();
+            this.namespaceManager.setRequiredMinVersion(version);
+            await this.server.sendToolListChanged();
+        }
+
+        this._lastToolsVersion = Math.max(this._lastToolsVersion, version);
     }
 }
 

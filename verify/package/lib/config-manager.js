@@ -32,13 +32,14 @@ class ConfigManager {
     async loadConfig(cliOptions = {}) {
         // Start with defaults - proxy URL can now be configured
         const config = {
-            proxyUrl: 'https://mcp.uruenterprises.com',
+            proxyUrl: 'https://mcp.uruintelligence.com',
             token: null,
             debug: false,
             // Standardize all MCP timeouts to 3 minutes (180000 ms)
             timeout: 180000,
             retries: 3,
             cacheTimeout: 30000,
+            toolSyncPollMs: 60000,
             // Hierarchical tool namespace configuration
             maxToolsPerPage: 50,
             maxNamespaces: 20,
@@ -55,6 +56,18 @@ class ConfigManager {
                 if (fileConfig.token) config.token = fileConfig.token;
                 if (fileConfig.debug !== undefined) config.debug = fileConfig.debug;
                 if (fileConfig.proxyUrl) config.proxyUrl = fileConfig.proxyUrl;
+                if (fileConfig.timeout !== undefined) {
+                    config.timeout = Number(fileConfig.timeout);
+                }
+                if (fileConfig.retries !== undefined) {
+                    config.retries = Number(fileConfig.retries);
+                }
+                if (fileConfig.cacheTimeout !== undefined) {
+                    config.cacheTimeout = Number(fileConfig.cacheTimeout);
+                }
+                if (fileConfig.toolSyncPollMs !== undefined) {
+                    config.toolSyncPollMs = Number(fileConfig.toolSyncPollMs);
+                }
             }
         } catch (error) {
             // Config file errors are non-fatal, just warn
@@ -72,6 +85,9 @@ class ConfigManager {
         }
         if (process.env.URU_PROXY_URL) {
             config.proxyUrl = process.env.URU_PROXY_URL;
+        }
+        if (process.env.URU_TOOL_SYNC_POLL_MS) {
+            config.toolSyncPollMs = parseInt(process.env.URU_TOOL_SYNC_POLL_MS, 10);
         }
 
         // Hierarchical tool configuration from environment
@@ -155,6 +171,15 @@ class ConfigManager {
             throw new Error('Retries must be between 0 and 10');
         }
 
+        if (
+            validated.toolSyncPollMs &&
+            (validated.toolSyncPollMs < 1000 || validated.toolSyncPollMs > 3600000)
+        ) {
+            throw new Error(
+                'Tool sync poll interval must be between 1000ms and 3600000ms'
+            );
+        }
+
         return validated;
     }
 
@@ -192,12 +217,13 @@ class ConfigManager {
      */
     getExampleConfig() {
         return {
-            proxyUrl: 'https://mcp.uruenterprises.com', // or 'http://localhost:3001' for development
+            proxyUrl: 'https://mcp.uruintelligence.com', // or 'http://localhost:3001' for development
             token: 'your-auth-token-here',
             debug: false,
             timeout: 30000,
             retries: 3,
             cacheTimeout: 30000,
+            toolSyncPollMs: 60000,
         };
     }
 
