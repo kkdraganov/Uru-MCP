@@ -162,6 +162,7 @@ call gmail_work_kal__execute_tool {
 - **Tool Cache TTL**: 30 seconds (configurable via `cacheTimeout`)
 - **App Cache TTL**: 30 seconds (configurable via `cacheTimeout`)
 - **Benefits**: Reduces API calls and improves response times
+- **Change Detection**: Uses lightweight version polling (`/tools/sync/version`) with ETag/304, not full namespace polling
 
 **MCP Client Compatibility**
 - **Protocol Version**: MCP 2025-06-18 specification
@@ -177,6 +178,7 @@ URU_API_KEY="your-uru-platform-token"
 # Optional
 URU_DEBUG="true"                                    # Enable debug logging
 URU_PROXY_URL="https://mcp.uruintelligence.com"    # MCP proxy endpoint
+URU_TOOL_SYNC_POLL_MS="60000"                      # Tools version poll interval (ms)
 ```
 
 ## ⚡ Quick Start
@@ -286,6 +288,7 @@ npx uru-mcp --key your-api-key-here
 
 - `URU_DEBUG`: Enable debug mode (`true` or `false`, defaults to `false`)
 - `URU_PROXY_URL`: MCP proxy URL (defaults to `https://mcp.uruintelligence.com`, use `http://localhost:3001` for development)
+- `URU_TOOL_SYNC_POLL_MS`: Poll interval for tools version checks (defaults to `60000`)
 
 ### 3. Client Integration
 
@@ -724,7 +727,8 @@ You can manually edit this file if needed:
 {
   "token": "your-auth-token-here",
   "debug": false,
-  "cacheTimeout": 30000
+  "cacheTimeout": 30000,
+  "toolSyncPollMs": 60000
 }
 ```
 

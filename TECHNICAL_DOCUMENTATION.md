@@ -301,6 +301,7 @@ All responses follow MCP specification exactly:
 URU_API_KEY="your-api-key"                  # Authentication token
 URU_PROXY_URL="https://mcp.uruintelligence.com"  # MCP proxy endpoint
 URU_DEBUG="true"                            # Enable debug logging
+URU_TOOL_SYNC_POLL_MS="60000"              # Tools version poll interval (ms)
 
 # Hierarchical tool configuration
 URU_MAX_TOOLS_PER_PAGE="50"                # Tools per page in listings
@@ -321,7 +322,8 @@ URU_CACHE_TIMEOUT="300000"                 # Cache timeout in milliseconds (5 mi
   "preloadNamespaces": ["platform", "company"],
   "enableParallelLoading": true,
   "enablePredictiveLoading": false,
-  "cacheTimeout": 30000
+  "cacheTimeout": 30000,
+  "toolSyncPollMs": 60000
 }
 ```
 
@@ -332,6 +334,7 @@ const config = {
   maxToolsPerPage: 50,
   maxNamespaces: 20,
   cacheTimeout: 30000,
+  toolSyncPollMs: 60000,
 
   // Pre-loading optimization
   preloadNamespaces: ['platform', 'company'],
