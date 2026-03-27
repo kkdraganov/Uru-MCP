@@ -4,7 +4,7 @@ A Model Context Protocol (MCP) server that provides AI assistants with access to
 
 ## Overview
 
-**Uru MCP v3.6.3** enables AI assistants to work directly with Uru Platform services through the Model Context Protocol. The server provides a standardized, MCP-compliant interface for accessing Uru's AI tools and capabilities via an innovative hierarchical tool namespace system with dynamic loading, intelligent caching, and automatic cleanup.
+**Uru MCP v3.6.4** enables AI assistants to work directly with Uru Platform services through the Model Context Protocol. The server provides a standardized, MCP-compliant interface for accessing Uru's AI tools and capabilities via an innovative hierarchical tool namespace system with dynamic loading, intelligent caching, and automatic cleanup.
 
 The server works seamlessly with MCP client applications such as [Claude Desktop](https://claude.ai/download), [VS Code](https://code.visualstudio.com/docs/copilot/chat/mcp-servers), [Cursor](https://www.cursor.com/), and other MCP-compatible clients.
 
@@ -202,7 +202,7 @@ Add the server configuration to your MCP settings file. MCP servers can be insta
       "args": ["uru-mcp"],
       "env": {
         "URU_API_KEY": "your-auth-token-here",
-        "URU_MAX_TOOLS_PER_PAGE": "50",
+        "URU_MAX_TOOLS_PER_PAGE": "200",
         "URU_PRELOAD_NAMESPACES": "platform,company"
       }
     }
@@ -360,7 +360,7 @@ The server uses JSON-RPC 2.0 over STDIO. All communication follows the MCP speci
 ```json
 {
   "name": "uru-mcp",
-  "version": "3.6.3",
+  "version": "3.6.4",
   "title": "Uru Platform MCP Server",
   "description": "Model Context Protocol server providing access to Uru Platform AI tools and capabilities"
 }
@@ -752,9 +752,9 @@ For custom MCP client integration, the server supports:
 
 ## 📋 Changelog
 
-### Version 3.6.3
-- Changed emergency discovery fallback to return no tools when backend discovery is unavailable
-- Synchronized package, CLI, server metadata, docs, and release artifact versioning to 3.6.3
+### Version 3.6.4
+- Increased the default top-level discovery page size from 50 to 200 tools per page
+- Synchronized package, CLI, server metadata, docs, and release artifact versioning to 3.6.4
 
 ### Version 3.6.2
 - Removed MCP-side truncation of oversized tool execution responses so clients receive full payloads

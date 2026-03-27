@@ -282,7 +282,7 @@ All responses follow MCP specification exactly:
 - **Usage Tracking**: Maintains access patterns for optimization
 
 ### Pagination Implementation
-- **Configurable Page Size**: Default 50 tools per page
+- **Configurable Page Size**: Default 200 tools per page
 - **Cursor-Based**: Efficient pagination for large tool sets
 - **Priority Sorting**: Discovery tools and high-priority tools first
 
@@ -304,7 +304,7 @@ URU_DEBUG="true"                            # Enable debug logging
 URU_TOOL_SYNC_POLL_MS="60000"              # Tools version poll interval (ms)
 
 # Hierarchical tool configuration
-URU_MAX_TOOLS_PER_PAGE="50"                # Tools per page in listings
+URU_MAX_TOOLS_PER_PAGE="200"               # Tools per page in listings
 URU_MAX_NAMESPACES="20"                     # Maximum cached namespaces
 URU_PRELOAD_NAMESPACES="platform,company"  # Comma-separated list of namespaces to pre-load
 URU_ENABLE_PARALLEL_LOADING="true"         # Enable concurrent namespace loading
@@ -317,7 +317,7 @@ URU_CACHE_TIMEOUT="300000"                 # Cache timeout in milliseconds (5 mi
 {
   "token": "your-api-key",
   "debug": false,
-  "maxToolsPerPage": 50,
+  "maxToolsPerPage": 200,
   "maxNamespaces": 20,
   "preloadNamespaces": ["platform", "company"],
   "enableParallelLoading": true,
@@ -331,7 +331,7 @@ URU_CACHE_TIMEOUT="300000"                 # Cache timeout in milliseconds (5 mi
 ```javascript
 const config = {
   // Performance tuning
-  maxToolsPerPage: 50,
+  maxToolsPerPage: 200,
   maxNamespaces: 20,
   cacheTimeout: 30000,
   toolSyncPollMs: 60000,
@@ -354,7 +354,7 @@ const config = {
       "args": ["uru-mcp@latest"],
       "env": {
         "URU_API_KEY": "your-api-key-here",
-        "URU_MAX_TOOLS_PER_PAGE": "50",
+        "URU_MAX_TOOLS_PER_PAGE": "200",
         "URU_PRELOAD_NAMESPACES": "platform,company"
       }
     }
@@ -400,7 +400,7 @@ const UruMCPServer = require('uru-mcp');
 const server = new UruMCPServer({
   token: 'your-api-key',
   proxyUrl: 'https://mcp.uruintelligence.com',
-  maxToolsPerPage: 50,
+  maxToolsPerPage: 200,
   preloadNamespaces: ['platform', 'company'],
   debug: false
 });
