@@ -235,13 +235,15 @@ Response: Tool execution result
 ```javascript
 {
   capabilities: {
-    tools: { listChanged: true },
+    tools: {},
     resources: {},
     prompts: {},
     logging: { level: 'info' }
   }
 }
 ```
+
+Live `notifications/tools/list_changed` support is enabled by default. Clients that cannot handle dynamic tool refresh can disable it with `enableToolListChanged: false` or `URU_ENABLE_TOOL_LIST_CHANGED=false`.
 
 ### Response Formats
 All responses follow MCP specification exactly:
@@ -302,6 +304,7 @@ URU_API_KEY="your-api-key"                  # Authentication token
 URU_PROXY_URL="https://mcp.uruintelligence.com"  # MCP proxy endpoint
 URU_DEBUG="true"                            # Enable debug logging
 URU_TOOL_SYNC_POLL_MS="60000"              # Tools version poll interval (ms)
+URU_ENABLE_TOOL_LIST_CHANGED="true"        # Set to false to disable live tools/list_changed notifications
 
 # Hierarchical tool configuration
 URU_MAX_TOOLS_PER_PAGE="200"               # Tools per page in listings
@@ -323,7 +326,8 @@ URU_CACHE_TIMEOUT="300000"                 # Cache timeout in milliseconds (5 mi
   "enableParallelLoading": true,
   "enablePredictiveLoading": false,
   "cacheTimeout": 30000,
-  "toolSyncPollMs": 60000
+  "toolSyncPollMs": 60000,
+  "enableToolListChanged": true
 }
 ```
 
@@ -335,6 +339,7 @@ const config = {
   maxNamespaces: 20,
   cacheTimeout: 30000,
   toolSyncPollMs: 60000,
+  enableToolListChanged: true,
 
   // Pre-loading optimization
   preloadNamespaces: ['platform', 'company'],
@@ -351,7 +356,7 @@ const config = {
   "mcpServers": {
     "uru": {
       "command": "npx",
-      "args": ["uru-mcp@latest"],
+      "args": ["-y", "uru-mcp@latest"],
       "env": {
         "URU_API_KEY": "your-api-key-here",
         "URU_MAX_TOOLS_PER_PAGE": "200",

@@ -4,7 +4,7 @@ A Model Context Protocol (MCP) server that provides AI assistants with access to
 
 ## Overview
 
-**Uru MCP v3.6.6** enables AI assistants to work directly with Uru Platform services through the Model Context Protocol. The server provides a standardized, MCP-compliant interface for accessing Uru's AI tools and capabilities via an innovative hierarchical tool namespace system with dynamic loading, intelligent caching, and automatic cleanup.
+**Uru MCP v3.6.7** enables AI assistants to work directly with Uru Platform services through the Model Context Protocol. The server provides a standardized, MCP-compliant interface for accessing Uru's AI tools and capabilities via an innovative hierarchical tool namespace system with dynamic loading, intelligent caching, and automatic cleanup.
 
 The server works seamlessly with MCP client applications such as [Claude Desktop](https://claude.ai/download), [VS Code](https://code.visualstudio.com/docs/copilot/chat/mcp-servers), [Cursor](https://www.cursor.com/), and other MCP-compatible clients.
 
@@ -168,7 +168,8 @@ call gmail_work_kal__execute_tool {
 - **Protocol Version**: MCP 2025-06-18 specification
 - **Transport**: STDIO (standard input/output)
 - **Message Format**: JSON-RPC 2.0
-- **Capabilities**: Tools (with listChanged support), Logging
+- **Capabilities**: Tools, Logging
+- **Live Tool Updates**: Enabled by default via `notifications/tools/list_changed`; set `URU_ENABLE_TOOL_LIST_CHANGED=false` to disable if a client cannot handle dynamic refresh cleanly
 
 **Environment Variables**
 ```bash
@@ -179,6 +180,7 @@ URU_API_KEY="your-uru-platform-token"
 URU_DEBUG="true"                                    # Enable debug logging
 URU_PROXY_URL="https://mcp.uruintelligence.com"    # MCP proxy endpoint
 URU_TOOL_SYNC_POLL_MS="60000"                      # Tools version poll interval (ms)
+URU_ENABLE_TOOL_LIST_CHANGED="true"                # Set to false to disable live tools/list_changed notifications
 ```
 
 ## ⚡ Quick Start
@@ -288,7 +290,8 @@ npx uru-mcp --key your-api-key-here
 
 - `URU_DEBUG`: Enable debug mode (`true` or `false`, defaults to `false`)
 - `URU_PROXY_URL`: MCP proxy URL (defaults to `https://mcp.uruintelligence.com`, use `http://localhost:3001` for development)
-- `URU_TOOL_SYNC_POLL_MS`: Poll interval for tools version checks (defaults to `60000`)
+- `URU_TOOL_SYNC_POLL_MS`: Poll interval for tools version checks when live tool updates are enabled (defaults to `60000`)
+- `URU_ENABLE_TOOL_LIST_CHANGED`: Enables live `notifications/tools/list_changed` updates (defaults to `true`; set to `false` to disable)
 
 ### 3. Client Integration
 
@@ -303,7 +306,7 @@ Edit: `~/.config/Claude/claude_desktop_config.json` (Linux)
   "mcpServers": {
     "uru": {
       "command": "npx",
-      "args": ["uru-mcp@latest"],
+      "args": ["-y", "uru-mcp@latest"],
       "env": {
         "URU_API_KEY": "your-auth-token-here"
       }
@@ -360,7 +363,7 @@ The server uses JSON-RPC 2.0 over STDIO. All communication follows the MCP speci
 ```json
 {
   "name": "uru-mcp",
-  "version": "3.6.6",
+  "version": "3.6.7",
   "title": "Uru Platform MCP Server",
   "description": "Model Context Protocol server providing access to Uru Platform AI tools and capabilities"
 }
@@ -728,7 +731,8 @@ You can manually edit this file if needed:
   "token": "your-auth-token-here",
   "debug": false,
   "cacheTimeout": 30000,
-  "toolSyncPollMs": 60000
+  "toolSyncPollMs": 60000,
+  "enableToolListChanged": true
 }
 ```
 
@@ -738,7 +742,8 @@ For custom MCP client integration, the server supports:
 
 - **Transport:** STDIO (standard input/output)
 - **Protocol:** JSON-RPC 2.0
-- **Capabilities:** Tools (with listChanged support), Logging
+- **Capabilities:** Tools, Logging
+- **Live Tool Updates:** Enabled by default; set `enableToolListChanged: false` to disable
 - **Authentication:** Bearer API key via environment variables or per-request API keys
 
 ## 🔒 Security
@@ -752,9 +757,13 @@ For custom MCP client integration, the server supports:
 
 ## 📋 Changelog
 
-### Version 3.6.6
+### Version 3.6.7
+- Fixed stdio shutdown so Claude-disconnected `uru-mcp` processes terminate cleanly instead of lingering and piling up `npm exec` children
+- Added explicit shutdown handling for broken stdout/stderr pipes (`EPIPE`) so stale processes exit cleanly instead of crashing later during tool-sync notifications
 - Preserved structured proxy failures across tool discovery and execution instead of collapsing them into generic MCP tool errors
-- Synchronized package, CLI, server metadata, docs, and release artifact versioning to 3.6.6
+- Updated generated Claude/client config examples to use `npx -y uru-mcp@latest` so clients stay on the current npm `latest` tag without interactive prompts
+- Added explicit `URU_ENABLE_TOOL_LIST_CHANGED` / `enableToolListChanged` override for clients that need to disable live tool refresh
+- Synchronized package, CLI, server metadata, docs, and release artifact versioning to 3.6.7
 
 ### Version 3.6.4
 - Increased the default top-level discovery page size from 50 to 200 tools per page

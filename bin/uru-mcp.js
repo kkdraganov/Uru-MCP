@@ -19,11 +19,13 @@ const UruMCPServer = require('../lib/mcp-server');
 const ConfigManager = require('../lib/config-manager');
 
 const program = new Command();
+let activeServer = null;
+let shutdownInFlight = false;
 
 program
     .name('uru-mcp')
     .description('Model Context Protocol (MCP) server for Uru Platform integration')
-    .version('3.6.6')
+    .version('3.6.7')
     .option('-k, --key <key>', 'Authentication token')
     .option('-d, --debug', 'Enable debug mode')
     .option(
@@ -47,6 +49,7 @@ Environment Variables:
   URU_API_KEY        Authentication API key (required)
   URU_DEBUG          Enable debug mode (true/false)
   URU_PROXY_URL      MCP proxy URL (default: https://mcp.uruintelligence.com)
+  URU_ENABLE_TOOL_LIST_CHANGED  Enable live tools/list_changed notifications (default: true)
 
 MCP Protocol:
   Transport: STDIO (JSON-RPC 2.0)
@@ -127,6 +130,7 @@ async function main() {
         }
 
         const server = new UruMCPServer(config);
+        activeServer = server;
         await server.start();
     } catch (error) {
         console.error(chalk.red('[ERROR] Error:'), error.message);
@@ -135,6 +139,32 @@ async function main() {
         }
         process.exit(1);
     }
+}
+
+async function shutdownAndExit(signal, code = 0) {
+    if (shutdownInFlight) {
+        return;
+    }
+    shutdownInFlight = true;
+
+    if (activeServer) {
+        try {
+            await activeServer.shutdown(signal);
+        } catch (error) {
+            console.error(chalk.red('[ERROR] Shutdown failed:'), error.message);
+        }
+    }
+
+    process.exit(code);
+}
+
+function handleStreamError(streamName, error) {
+    if (error && error.code === 'EPIPE') {
+        void shutdownAndExit(`${streamName}_EPIPE`);
+        return;
+    }
+    console.error(chalk.red(`[ERROR] ${streamName} stream failure:`), error.message);
+    void shutdownAndExit(`${streamName}_ERROR`, 1);
 }
 
 async function runSetupWizard() {
@@ -213,7 +243,7 @@ function showClaudeConfig() {
         mcpServers: {
             uru: {
                 command: 'npx',
-                args: ['uru-mcp@latest'],
+                args: ['-y', 'uru-mcp@latest'],
                 env: {
                     URU_API_KEY: 'your-auth-token-here',
                 },
@@ -240,7 +270,7 @@ function showClaudeConfig() {
     const genericConfigExample = {
         uru: {
             command: 'npx',
-            args: ['uru-mcp@latest'],
+            args: ['-y', 'uru-mcp@latest'],
             env: {
                 URU_API_KEY: 'your-auth-token-here',
             },
@@ -253,13 +283,16 @@ function showClaudeConfig() {
 // Handle process signals gracefully
 process.on('SIGINT', () => {
     console.log(chalk.yellow('\nShutting down Uru MCP...'));
-    process.exit(0);
+    void shutdownAndExit('SIGINT');
 });
 
 process.on('SIGTERM', () => {
     console.log(chalk.yellow('\n👋 Shutting down Uru MCP...'));
-    process.exit(0);
+    void shutdownAndExit('SIGTERM');
 });
+
+process.stdout.on('error', error => handleStreamError('STDOUT', error));
+process.stderr.on('error', error => handleStreamError('STDERR', error));
 
 // Run the main function
 main().catch(error => {

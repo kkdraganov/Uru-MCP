@@ -40,6 +40,7 @@ class ConfigManager {
             retries: 3,
             cacheTimeout: 30000,
             toolSyncPollMs: 60000,
+            enableToolListChanged: true,
             // Hierarchical tool namespace configuration
             maxToolsPerPage: 200,
             maxNamespaces: 20,
@@ -68,6 +69,11 @@ class ConfigManager {
                 if (fileConfig.toolSyncPollMs !== undefined) {
                     config.toolSyncPollMs = Number(fileConfig.toolSyncPollMs);
                 }
+                if (fileConfig.enableToolListChanged !== undefined) {
+                    config.enableToolListChanged =
+                        fileConfig.enableToolListChanged === true ||
+                        fileConfig.enableToolListChanged === 'true';
+                }
             }
         } catch (error) {
             // Config file errors are non-fatal, just warn
@@ -88,6 +94,10 @@ class ConfigManager {
         }
         if (process.env.URU_TOOL_SYNC_POLL_MS) {
             config.toolSyncPollMs = parseInt(process.env.URU_TOOL_SYNC_POLL_MS, 10);
+        }
+        if (process.env.URU_ENABLE_TOOL_LIST_CHANGED) {
+            config.enableToolListChanged =
+                process.env.URU_ENABLE_TOOL_LIST_CHANGED === 'true';
         }
 
         // Hierarchical tool configuration from environment
@@ -180,6 +190,13 @@ class ConfigManager {
             );
         }
 
+        if (
+            validated.enableToolListChanged !== undefined &&
+            typeof validated.enableToolListChanged !== 'boolean'
+        ) {
+            throw new Error('enableToolListChanged must be a boolean');
+        }
+
         return validated;
     }
 
@@ -224,6 +241,7 @@ class ConfigManager {
             retries: 3,
             cacheTimeout: 30000,
             toolSyncPollMs: 60000,
+            enableToolListChanged: true,
         };
     }
 
@@ -237,7 +255,7 @@ class ConfigManager {
             mcpServers: {
                 uru: {
                     command: 'npx',
-                    args: ['uru-mcp@latest'],
+                    args: ['-y', 'uru-mcp@latest'],
                     env: {
                         URU_API_KEY: exampleConfig.token || 'your-auth-token-here',
                     },

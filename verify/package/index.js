@@ -8,6 +8,8 @@
 
 const UruMCPServer = require('./lib/mcp-server');
 const ConfigManager = require('./lib/config-manager');
+let activeServer = null;
+let shutdownInFlight = false;
 
 async function main() {
   try {
@@ -27,6 +29,7 @@ async function main() {
 
     // Start MCP server
     const server = new UruMCPServer(config);
+    activeServer = server;
     await server.start();
 
   } catch (error) {
@@ -35,14 +38,43 @@ async function main() {
   }
 }
 
+async function shutdownAndExit(signal, code = 0) {
+  if (shutdownInFlight) {
+    return;
+  }
+  shutdownInFlight = true;
+
+  if (activeServer) {
+    try {
+      await activeServer.shutdown(signal);
+    } catch (error) {
+      console.error('❌ Shutdown failed:', error.message);
+    }
+  }
+
+  process.exit(code);
+}
+
+function handleStreamError(streamName, error) {
+  if (error && error.code === 'EPIPE') {
+    void shutdownAndExit(`${streamName}_EPIPE`);
+    return;
+  }
+  console.error(`❌ ${streamName} stream failure:`, error.message);
+  void shutdownAndExit(`${streamName}_ERROR`, 1);
+}
+
 // Handle process signals gracefully
 process.on('SIGINT', () => {
-  process.exit(0);
+  void shutdownAndExit('SIGINT');
 });
 
 process.on('SIGTERM', () => {
-  process.exit(0);
+  void shutdownAndExit('SIGTERM');
 });
+
+process.stdout.on('error', (error) => handleStreamError('STDOUT', error));
+process.stderr.on('error', (error) => handleStreamError('STDERR', error));
 
 // Start the server
 main().catch((error) => {
