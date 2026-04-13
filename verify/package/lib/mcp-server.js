@@ -72,7 +72,7 @@ class UruMCPServer {
         this.server = new Server(
             {
                 name: 'uru-mcp',
-                version: '3.6.4',
+                version: '3.6.5',
                 title: 'Uru Platform MCP Server',
                 description:
                     'MCP-compliant server with hierarchical tool namespacing for efficient management of 400+ tools',
@@ -174,6 +174,154 @@ This hierarchical approach provides full MCP compliance while efficiently managi
             error.data = data;
         }
         return error;
+    }
+
+    /**
+     * True when an error already carries MCP JSON-RPC metadata.
+     */
+    isMcpError(error) {
+        return Boolean(
+            error &&
+                typeof error === 'object' &&
+                typeof error.code === 'number' &&
+                Number.isFinite(error.code)
+        );
+    }
+
+    /**
+     * Map HTTP status codes to MCP JSON-RPC error codes.
+     */
+    mapHttpStatusToMcpCode(status, fallbackCode = -32000) {
+        if (status === 400) {
+            return -32602;
+        }
+
+        if (status === 401) {
+            return -32001;
+        }
+
+        if (status === 403) {
+            return -32002;
+        }
+
+        if (status === 404) {
+            return -32601;
+        }
+
+        return fallbackCode;
+    }
+
+    /**
+     * Extract the most useful user-facing message from a proxy error payload.
+     */
+    getProxyErrorMessage(payload, fallbackMessage) {
+        if (!payload || typeof payload !== 'object') {
+            return fallbackMessage;
+        }
+
+        const extractMessage = value => {
+            if (!value) {
+                return null;
+            }
+
+            if (typeof value === 'string') {
+                return value;
+            }
+
+            if (typeof value === 'object') {
+                return (
+                    value.message ||
+                    value.error ||
+                    value.detail ||
+                    value.description ||
+                    null
+                );
+            }
+
+            return null;
+        };
+
+        return (
+            extractMessage(payload.message) ||
+            extractMessage(payload.error) ||
+            extractMessage(payload.detail) ||
+            extractMessage(payload.details) ||
+            fallbackMessage
+        );
+    }
+
+    /**
+     * Preserve structured proxy fields so the MCP client can recover.
+     */
+    buildProxyErrorData(payload, status = null, extras = {}) {
+        const data = {};
+
+        if (status !== null && status !== undefined) {
+            data.status = status;
+        }
+
+        if (payload && typeof payload === 'object') {
+            const passthroughKeys = [
+                'error',
+                'details',
+                'detail',
+                'tip',
+                'tips',
+                'suggestion',
+                'suggestions',
+                'retryable',
+                'log_id',
+                'successful',
+                'success',
+                'help_url',
+            ];
+
+            for (const key of passthroughKeys) {
+                if (payload[key] !== undefined) {
+                    data[key] = payload[key];
+                }
+            }
+
+            if (payload.code !== undefined) {
+                data.upstream_code = payload.code;
+            }
+
+            if (payload.message !== undefined) {
+                data.upstream_message = payload.message;
+            }
+
+            data.upstream = payload;
+        }
+
+        for (const [key, value] of Object.entries(extras)) {
+            if (value !== undefined && data[key] === undefined) {
+                data[key] = value;
+            }
+        }
+
+        return Object.keys(data).length > 0 ? data : null;
+    }
+
+    /**
+     * Convert a structured proxy payload into an MCP error without flattening it.
+     */
+    createMcpErrorFromProxyPayload(
+        payload,
+        status = null,
+        fallbackMessage = 'Request failed',
+        extras = {}
+    ) {
+        if (this.isMcpError(payload)) {
+            return payload;
+        }
+
+        const code =
+            payload && typeof payload?.code === 'number'
+                ? payload.code
+                : this.mapHttpStatusToMcpCode(status);
+        const message = this.getProxyErrorMessage(payload, fallbackMessage);
+        const data = this.buildProxyErrorData(payload, status, extras);
+        return this.createMcpError(code, message, data);
     }
 
     /**
@@ -357,6 +505,18 @@ This hierarchical approach provides full MCP compliance while efficiently managi
             } catch (error) {
                 this.log(`❌ Error in tools/list: ${error.message}`, 'error');
 
+                if (this.isMcpError(error)) {
+                    throw error;
+                }
+
+                if (error.response?.data) {
+                    throw this.createMcpErrorFromProxyPayload(
+                        error.response.data,
+                        error.response.status,
+                        'Failed to list tools'
+                    );
+                }
+
                 // Return proper MCP errors
                 if (error.response?.status === 401) {
                     throw this.createMcpError(-32001, 'Authentication failed', {
@@ -470,6 +630,23 @@ This hierarchical approach provides full MCP compliance while efficiently managi
                 return await this.handleLegacyToolExecution(name, cleanedArgs, apiKey);
             } catch (error) {
                 this.log(`❌ Tool execution failed: ${error.message}`, 'error');
+
+                if (this.isMcpError(error)) {
+                    throw error;
+                }
+
+                if (error.response?.data) {
+                    throw this.createMcpErrorFromProxyPayload(
+                        error.response.data,
+                        error.response.status,
+                        `Tool '${request.params.name}' failed`,
+                        {
+                            tool: request.params.name,
+                            suggestion:
+                                'Use namespace_list_tools to discover available tools',
+                        }
+                    );
+                }
 
                 // Return proper MCP errors
                 if (error.response?.status === 404) {
@@ -598,6 +775,23 @@ This hierarchical approach provides full MCP compliance while efficiently managi
                 `❌ Failed to discover tools for namespace '${namespace}': ${error.message}`,
                 'error'
             );
+
+            if (this.isMcpError(error)) {
+                throw error;
+            }
+
+            if (error.response?.data) {
+                throw this.createMcpErrorFromProxyPayload(
+                    error.response.data,
+                    error.response.status,
+                    `Failed to load namespace '${namespace}'`,
+                    {
+                        namespace,
+                        suggestion: 'Check your authentication and try again',
+                    }
+                );
+            }
+
             throw this.createMcpError(
                 -32001,
                 `Failed to load namespace '${namespace}'`,
@@ -826,6 +1020,9 @@ This hierarchical approach provides full MCP compliance while efficiently managi
                 `❌ Failed to execute tool '${targetToolName}' in namespace '${namespace}': ${error.message}`,
                 'error'
             );
+            if (this.isMcpError(error)) {
+                throw error;
+            }
             throw this.createMcpError(
                 -32001,
                 `Failed to execute tool '${targetToolName}'`,
@@ -1046,18 +1243,15 @@ This hierarchical approach provides full MCP compliance while efficiently managi
                     response.data.successful === false ||
                     response.data.success === false
                 ) {
-                    // Return MCP-compliant error response instead of throwing
-                    return {
-                        content: [
-                            {
-                                type: 'text',
-                                text: `Tool execution failed: ${
-                                    response.data.error || 'Unknown error'
-                                }`,
-                            },
-                        ],
-                        isError: true,
-                    };
+                    throw this.createMcpErrorFromProxyPayload(
+                        response.data,
+                        response.status,
+                        `Tool '${toolName}' failed`,
+                        {
+                            tool: toolName,
+                            app: appName,
+                        }
+                    );
                 }
 
                 // Return MCP-compliant response format
@@ -1116,6 +1310,27 @@ This hierarchical approach provides full MCP compliance while efficiently managi
                 this.log(
                     `   Response data: ${JSON.stringify(error.response.data)}`,
                     'error'
+                );
+            }
+
+            if (this.isMcpError(error)) {
+                throw error;
+            }
+
+            if (error.response?.data) {
+                throw this.createMcpErrorFromProxyPayload(
+                    error.response.data,
+                    error.response.status,
+                    `Tool '${toolName}' failed`,
+                    {
+                        tool: toolName,
+                        app: appName,
+                        namespace,
+                        suggestion:
+                            namespace && error.response.status === 404
+                                ? `Tool '${toolName}' not found. Try calling ${namespace}__list_tools to see available tools.`
+                                : undefined,
+                    }
                 );
             }
 
