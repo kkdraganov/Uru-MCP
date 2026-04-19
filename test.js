@@ -47,6 +47,29 @@ async function main() {
         listChanged: false,
     });
 
+    const workspaceErrorResult = defaultServer.buildToolErrorResultFromProxyPayload(
+        {
+            message:
+                'No current workspace is set for this API key. Call set_current_workspace with a valid workspace_id before using other tools.',
+            code: 'workspace_selection_required',
+            details: {
+                recovery_tools: ['list_workspaces', 'set_current_workspace'],
+            },
+        },
+        409
+    );
+    assert.strictEqual(workspaceErrorResult.isError, true);
+    assert.ok(
+        workspaceErrorResult.content[0].text.includes(
+            'No current workspace is set for this API key.'
+        )
+    );
+    assert.ok(
+        workspaceErrorResult.content[0].text.includes(
+            'Recovery tools: list_workspaces, set_current_workspace'
+        )
+    );
+
     const originalSetInterval = global.setInterval;
     const originalClearInterval = global.clearInterval;
     let intervalCalls = 0;

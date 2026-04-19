@@ -75,7 +75,7 @@ class UruMCPServer {
         this.server = new Server(
             {
                 name: 'uru-mcp',
-                version: '3.6.7',
+                version: '3.6.8',
                 title: 'Uru Platform MCP Server',
                 description:
                     'MCP-compliant server with hierarchical tool namespacing for efficient management of 400+ tools',
