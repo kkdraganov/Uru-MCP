@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-This document outlines the architectural changes required for the MCP Proxy Server to support the new Hierarchical Tool Namespace with Dynamic Loading pattern implemented in the Uru MCP Server. The changes enable efficient management of 400+ tools while maintaining full MCP protocol compliance and backward compatibility.
+This document outlines the architectural changes required for the MCP Proxy Server to support the Hierarchical Tool Namespace with Dynamic Loading pattern implemented in the Uru MCP Server. The changes enable efficient management of 400+ tools while maintaining full MCP protocol compliance and a canonical wrapper execution contract.
 
 ## Current State Analysis
 
@@ -22,13 +22,13 @@ MCP Client → Uru MCP Server → MCP Proxy → Tool Sources
 **Current API Endpoints:**
 - `GET /list/apps` - Returns array of available app names
 - `GET /list/apps/{app_name}/tools` - Returns MCP-compliant tool schemas for specific app
-- `POST /execute/{tool_slug}` - Executes specified tool using original tool name
+- `POST /execute/{namespace}__execute_tool` - Executes provider tools through a namespace wrapper
 
 **Current Tool Routing:**
-- Tools are identified by their original names (e.g., `send_email`, `create_calendar_event`)
-- No namespace separation - potential naming conflicts
-- All tools loaded simultaneously - performance issues with 400+ tools
-- App context passed via headers (`X-App-Context`) and request body (`_app_context`)
+- Top-level tools are namespace wrappers such as `outlook_lloyd__list_tools` and `outlook_lloyd__execute_tool`
+- Provider tools are selected through the wrapper payload: `{ "tool_name": "OUTLOOK_GET_PROFILE", "parameters": {} }`
+- Large provider catalogs are loaded progressively rather than all at startup
+- Personal integrations do not use `_app_context` or `X-App-Context`; routing uses the wrapper name plus canonical namespace/connection headers
 
 ### Limitations of Current Architecture
 
@@ -42,17 +42,17 @@ MCP Client → Uru MCP Server → MCP Proxy → Tool Sources
 
 ### Hierarchical Tool Namespace Structure
 
-**Namespace Format:** `{namespace}.{tool_name}`
+**Namespace Format:** `{namespace}__list_tools` and `{namespace}__execute_tool`
 
 **Examples:**
-- `gmail_work_kal__send_email` - Gmail tool in work account namespace
-- `platform__create_workspace` - Platform-specific tool
-- `company__analyze_transcript` - Company n8n workflow tool
-- `slack_team__send_message` - Slack tool in team workspace
+- `gmail_work_kal__execute_tool` - Executes Gmail provider tools in the work account namespace
+- `platform__execute_tool` - Executes first-party platform tools
+- `company__execute_tool` - Executes company workflow tools
+- `slack_team__execute_tool` - Executes Slack provider tools in the team workspace
 
 **Namespace Discovery Tools:**
 - `{namespace}__list_tools` - Discover tools within specific namespace
-- `uru_help` - Global help and namespace discovery
+- `{namespace}__execute_tool` - Execute a provider tool returned by discovery
 
 ### Advanced Dynamic Loading Capabilities
 
@@ -134,30 +134,32 @@ Response: {
 
 **Current Execution Flow:**
 ```
-POST /execute/{tool_slug}
-Headers: X-App-Context: {app_name}
-Body: { ..., _app_context: {app_name} }
+POST /execute/{namespace}__execute_tool
+Headers:
+  X-Namespace: {namespace}
+  X-Connected-Account-Id: {connection_id}   # optional when known
+Body:
+  { "tool_name": "{provider_tool}", "parameters": {} }
 ```
 
 **Enhanced Execution Flow:**
 ```javascript
-// Hierarchical tool execution
-POST /execute/{namespaced_tool_name}
+// Canonical wrapper execution
+POST /execute/{namespace}__execute_tool
 // Examples:
-// POST /execute/gmail_work_kal.send_email
-// POST /execute/platform.create_workspace
+// POST /execute/outlook_lloyd__execute_tool
+// POST /execute/platform__execute_tool
 
 // Enhanced routing logic
-function routeToolExecution(namespacedToolName, args, headers) {
-  const [namespace, ...toolParts] = namespacedToolName.split('.');
-  const originalToolName = toolParts.join('.');
-  const appName = denormalizeNamespace(namespace);
-  
-  // Route to appropriate backend with context
-  return executeOnBackend(originalToolName, args, {
-    appName,
+function routeToolExecution(wrapperToolName, args, headers) {
+  const namespace = wrapperToolName.replace(/__execute_tool$/, '');
+
+  return executeOnBackend(wrapperToolName, {
+    tool_name: args.tool_name,
+    parameters: args.parameters || {}
+  }, {
     namespace,
-    originalContext: headers['X-App-Context']
+    connectedAccountId: headers['X-Connected-Account-Id']
   });
 }
 ```
@@ -194,60 +196,48 @@ class ProxyNamespaceRegistry {
   }
 }
 
-// Tool Router with Namespace Support
+// Tool Router with Wrapper Namespace Support
 class NamespaceAwareToolRouter {
   constructor(namespaceRegistry) {
     this.registry = namespaceRegistry;
   }
   
   async routeExecution(toolName, args, context) {
-    if (toolName.includes('.')) {
-      return this.handleNamespacedTool(toolName, args, context);
-    } else {
-      return this.handleLegacyTool(toolName, args, context);
+    if (!toolName.endsWith('__execute_tool')) {
+      throw new Error(`Use <namespace>__execute_tool instead of direct provider tool '${toolName}'`);
     }
+    return this.handleWrapperTool(toolName, args, context);
   }
   
-  async handleNamespacedTool(namespacedName, args, context) {
-    const [namespace, ...toolParts] = namespacedName.split('.');
-    const originalName = toolParts.join('.');
+  async handleWrapperTool(wrapperToolName, args, context) {
+    const namespace = wrapperToolName.replace(/__execute_tool$/, '');
     const namespaceInfo = this.registry.namespaces.get(namespace);
     
     if (!namespaceInfo) {
       throw new Error(`Namespace '${namespace}' not found`);
     }
     
-    return this.executeOnBackend(originalName, args, {
+    return this.executeOnBackend(wrapperToolName, {
+      tool_name: args.tool_name,
+      parameters: args.parameters || {}
+    }, {
       ...context,
-      appName: namespaceInfo.appName,
-      namespace
+      namespace,
+      connectedAccountId: namespaceInfo.connected_account_id
     });
   }
 }
 ```
 
-### 4. Backward Compatibility Layer
+### 4. Canonical Direct-Call Rejection
 
-**Legacy Tool Support:**
+**Direct Provider Tool Rejection:**
 ```javascript
-// Backward compatibility handler
-class LegacyToolHandler {
-  constructor(namespaceRegistry, toolRouter) {
-    this.registry = namespaceRegistry;
-    this.router = toolRouter;
-  }
-  
-  async handleLegacyTool(toolName, args, context) {
-    // Try to find tool in loaded namespaces
-    for (const [namespace, info] of this.registry.namespaces) {
-      if (info.tools.has(toolName)) {
-        console.warn(`Legacy tool '${toolName}' found in namespace '${namespace}'. Consider using '${namespace}.${toolName}'`);
-        return this.router.handleNamespacedTool(`${namespace}.${toolName}`, args, context);
-      }
-    }
-    
-    // Fallback to original behavior
-    return this.executeOriginalFlow(toolName, args, context);
+class DirectProviderToolRejector {
+  reject(toolName) {
+    throw new Error(
+      `Direct tool '${toolName}' is not supported. Use <namespace>__list_tools, then <namespace>__execute_tool with { tool_name, parameters }.`
+    );
   }
 }
 ```
@@ -268,8 +258,8 @@ class LegacyToolHandler {
 
 3. **Tool Router Enhancement**
    - Implement `NamespaceAwareToolRouter`
-   - Add hierarchical tool name parsing
-   - Maintain backward compatibility
+   - Add wrapper tool name parsing
+   - Reject obsolete direct provider-tool calls with clear recovery guidance
 
 ### Phase 2: Dynamic Loading (Week 3-4)
 
@@ -301,22 +291,24 @@ class LegacyToolHandler {
 
 ```javascript
 describe('NamespaceAwareToolRouter', () => {
-  test('should route namespaced tools correctly', async () => {
+  test('should route wrapper tools correctly', async () => {
     const result = await router.routeExecution(
-      'gmail_work_kal__send_email',
-      { to: 'test@example.com' },
+      'gmail_work_kal__execute_tool',
+      {
+        tool_name: 'GMAIL_SEND_EMAIL',
+        parameters: { to: 'test@example.com' }
+      },
       { userId: 'user123' }
     );
     expect(result).toBeDefined();
   });
   
-  test('should handle legacy tools with backward compatibility', async () => {
-    const result = await router.routeExecution(
-      'send_email',
+  test('should reject direct provider tools with guidance', async () => {
+    await expect(router.routeExecution(
+      'GMAIL_SEND_EMAIL',
       { to: 'test@example.com' },
       { userId: 'user123' }
-    );
-    expect(result).toBeDefined();
+    )).rejects.toThrow('__execute_tool');
   });
 });
 ```
@@ -338,10 +330,13 @@ describe('MCP Proxy Integration', () => {
     );
   });
   
-  test('should execute namespaced tools', async () => {
+  test('should execute wrapper tools', async () => {
     const response = await request(app)
-      .post('/execute/gmail_work_kal__send_email')
-      .send({ to: 'test@example.com', subject: 'Test' })
+      .post('/execute/gmail_work_kal__execute_tool')
+      .send({
+        tool_name: 'GMAIL_SEND_EMAIL',
+        parameters: { to: 'test@example.com', subject: 'Test' }
+      })
       .expect(200);
     
     expect(response.body).toHaveProperty('success', true);
@@ -361,36 +356,29 @@ describe('MCP Proxy Integration', () => {
    - Namespace loading performance
    - Memory usage validation
 
-3. **Backward Compatibility**
-   - Test existing MCP clients continue working
-   - Verify legacy tool execution
-   - Validate migration scenarios
+3. **Contract Compatibility**
+   - Test existing MCP clients continue using standard `tools/list` and `tools/call`
+   - Verify direct provider tool execution is rejected with actionable guidance
+   - Validate canonical wrapper execution scenarios
 
 ## Backward Compatibility
 
 ### Existing Client Support
 
-**Guaranteed Compatibility:**
-- All existing MCP clients continue working without modification
-- Legacy tool names still function (with deprecation warnings)
-- Original API endpoints remain functional
-- No breaking changes to existing integrations
-
-**Migration Path:**
-1. **Phase 1**: Both legacy and namespaced tools work simultaneously
-2. **Phase 2**: Deprecation warnings for legacy tool usage
-3. **Phase 3**: Optional migration to namespaced tools
-4. **Phase 4**: Legacy support maintained indefinitely for compatibility
+**Canonical Compatibility:**
+- MCP clients continue using standard `tools/list` and `tools/call`
+- Direct provider tool names are no longer executed by guessing across namespaces
+- Obsolete direct calls return an actionable error pointing to `<namespace>__list_tools` and `<namespace>__execute_tool`
+- Platform compatibility is maintained at the MCP protocol boundary, not through hidden app-context routing
 
 ### Configuration Options
 
 ```javascript
-// Proxy configuration for backward compatibility
+// Proxy configuration
 {
   "namespaceSupport": {
     "enabled": true,
-    "legacySupport": true,
-    "deprecationWarnings": true,
+    "canonicalWrapperExecution": true,
     "autoMigration": false
   },
   "performance": {
@@ -424,4 +412,4 @@ describe('MCP Proxy Integration', () => {
 3. **Interoperability**: Compatible with existing and future MCP clients
 4. **Standards**: Establishes patterns for other MCP implementations
 
-This architectural enhancement positions the MCP Proxy Server as a scalable, efficient, and standards-compliant gateway for AI tool access while maintaining full backward compatibility with existing integrations.
+This architecture positions the MCP Proxy Server as a scalable, efficient, and standards-compliant gateway for AI tool access while keeping execution on a single canonical wrapper contract.

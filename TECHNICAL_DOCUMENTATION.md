@@ -201,7 +201,7 @@ MCP Server.handleNamespaceExecuteTool()
 ┌─────────────────────────────────────────┐
 │ 2. Execute via Proxy                    │
 │    - Denormalize namespace to app name  │
-│    - Call executeToolOnProxy()          │
+│    - Call executeWrapperToolOnProxy()   │
 │    - Handle authentication              │
 └─────────────────────────────────────────┘
         ↓
@@ -447,10 +447,13 @@ call calendar__create_event {
 }
 
 // 3. Send notification email
-call gmail_work_kal__send_email {
-  "to": "user@company.com",
-  "subject": "Meeting Scheduled",
-  "body": "Your meeting has been scheduled."
+call gmail_work_kal__execute_tool {
+  "tool_name": "GMAIL_SEND_EMAIL",
+  "parameters": {
+    "to": "user@company.com",
+    "subject": "Meeting Scheduled",
+    "body": "Your meeting has been scheduled."
+  }
 }
 ```
 

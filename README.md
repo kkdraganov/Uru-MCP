@@ -4,7 +4,7 @@ A Model Context Protocol (MCP) server that provides AI assistants with access to
 
 ## Overview
 
-**Uru MCP v3.6.8** enables AI assistants to work directly with Uru Platform services through the Model Context Protocol. The server provides a standardized, MCP-compliant interface for accessing Uru's AI tools and capabilities via an innovative hierarchical tool namespace system with dynamic loading, intelligent caching, and automatic cleanup.
+**Uru MCP v3.7.0** enables AI assistants to work directly with Uru Platform services through the Model Context Protocol. The server provides a standardized, MCP-compliant interface for accessing Uru's AI tools and capabilities via an innovative hierarchical tool namespace system with dynamic loading, intelligent caching, and automatic cleanup.
 
 The server works seamlessly with MCP client applications such as [Claude Desktop](https://claude.ai/download), [VS Code](https://code.visualstudio.com/docs/copilot/chat/mcp-servers), [Cursor](https://www.cursor.com/), and other MCP-compatible clients.
 
@@ -24,10 +24,10 @@ The Uru MCP server implements an advanced hierarchical tool namespace system wit
 - Each namespace represents a service integration or functional area
 - Provides progressive tool discovery and dynamic loading
 
-**Namespaced Tools**
-- Tools prefixed with namespace (e.g., `gmail_work_kal__send_email`, `platform__manage_users`)
-- Dynamic loading on-demand for optimal performance
-- Intelligent pre-loading for high-priority namespaces
+**Namespaced Execution**
+- Each namespace exposes `__list_tools` and `__execute_tool` wrappers (for example, `gmail_work_kal__execute_tool`)
+- Provider tools are executed by calling the namespace wrapper with `{ "tool_name": "<provider tool>", "parameters": {} }`
+- Dynamic loading on-demand keeps large tool catalogs out of the initial model context
 
 **MCP Protocol Compliance**
 - Standard `tools/list` returns actual executable tools
@@ -85,9 +85,9 @@ The hierarchical tool discovery process follows MCP protocol standards with inte
 
 1. **Initial Connection**: MCP client connects to Uru MCP server
 2. **Namespace Discovery**: Server returns namespace discovery tools and pre-loaded high-priority tools
-3. **Progressive Loading**: Namespace discovery tools (e.g., `gmail_work_kal_list_tools`) load tools on-demand
+3. **Progressive Loading**: Namespace discovery tools (e.g., `gmail_work_kal__list_tools`) load tools on-demand
 4. **Dynamic Registration**: Tools are registered in the dynamic tool registry for efficient access
-5. **Direct Execution**: Namespaced tools are executed directly (e.g., `gmail_work_kal_send_email`)
+5. **Wrapper Execution**: Provider tools execute through namespace wrappers (e.g., `gmail_work_kal__execute_tool`)
 6. **Intelligent Caching**: Tools and namespaces are cached with TTL and usage-based optimization
 
 ### Usage Examples
@@ -100,11 +100,14 @@ tools/list → [gmail_work_kal__list_tools, platform__list_tools, uru_help, ...]
 // Explore Gmail namespace
 call gmail_work_kal__list_tools → Loads and displays Gmail tools
 
-// Send an email using namespaced tool
-call gmail_work_kal__send_email {
-  "to": "colleague@company.com",
-  "subject": "Project Update",
-  "body": "Here's the latest status..."
+// Send an email through the namespace wrapper
+call gmail_work_kal__execute_tool {
+  "tool_name": "GMAIL_SEND_EMAIL",
+  "parameters": {
+    "to": "colleague@company.com",
+    "subject": "Project Update",
+    "body": "Here's the latest status..."
+  }
 }
 ```
 
@@ -232,7 +235,7 @@ When you first connect, you'll see namespace discovery tools and pre-loaded tool
 - **Discovery Tools**: `gmail_work_kal__list_tools`, `platform__list_tools`, `uru_help`
 - **Pre-loaded Tools**: High-priority tools from `platform` and `company` namespaces
 - **Dynamic Loading**: Namespace tools are loaded on-demand when discovery tools are called
-- **Direct Execution**: Namespaced tools are executed directly with full MCP compliance
+- **Wrapper Execution**: Provider tools execute through namespace wrappers with full MCP compliance
 
 This design prevents overwhelming your AI client with 400+ tools while maintaining full access to all capabilities.
 
@@ -363,7 +366,7 @@ The server uses JSON-RPC 2.0 over STDIO. All communication follows the MCP speci
 ```json
 {
   "name": "uru-mcp",
-  "version": "3.6.8",
+  "version": "3.7.0",
   "title": "Uru Platform MCP Server",
   "description": "Model Context Protocol server providing access to Uru Platform AI tools and capabilities"
 }
@@ -393,8 +396,8 @@ Returns service connection tools rather than individual tools to prevent overwhe
   "result": {
     "tools": [
       {
-        "name": "Gmail (Work - Kal)",
-        "description": "Explore Gmail (Work - Kal) tools. Call this to see what specific tools are available for Gmail (Work - Kal), then call those tools directly by name.",
+        "name": "gmail_work_kal__list_tools",
+        "description": "List all available tools in the Gmail (Work - Kal) namespace.",
         "inputSchema": {
           "type": "object",
           "properties": {},
@@ -402,8 +405,8 @@ Returns service connection tools rather than individual tools to prevent overwhe
         }
       },
       {
-        "name": "COMPANY",
-        "description": "Explore COMPANY tools. Call this to see what specific tools are available for COMPANY, then call those tools directly by name.",
+        "name": "gmail_work_kal__execute_tool",
+        "description": "Execute a specific tool in the Gmail (Work - Kal) namespace.",
         "inputSchema": {
           "type": "object",
           "properties": {},
@@ -415,18 +418,18 @@ Returns service connection tools rather than individual tools to prevent overwhe
 }
 ```
 
-##### tools/call - Execute Tools (Tier 2 & 3)
+##### tools/call - Discover and Execute Namespace Tools
 
-Supports both service connection exploration (Tier 2) and direct tool execution (Tier 3).
+Supports namespace exploration and canonical wrapper execution.
 
-**Service Connection Exploration (Tier 2):**
+**Namespace Exploration:**
 ```json
 {
   "jsonrpc": "2.0",
   "id": 2,
   "method": "tools/call",
   "params": {
-    "name": "Gmail (Work - Kal)",
+    "name": "gmail_work_kal__list_tools",
     "arguments": {}
   }
 }
@@ -441,25 +444,28 @@ Supports both service connection exploration (Tier 2) and direct tool execution 
     "content": [
       {
         "type": "text",
-        "text": "✅ **Gmail (Work - Kal) Tools Available** (15 tools)\n\n• **GMAIL_SEND_EMAIL**: Send emails via Gmail\n• **GMAIL_FETCH_EMAILS**: Retrieve emails from Gmail\n• **GMAIL_SEARCH**: Search Gmail messages\n\n**Next Step:** Call any of these tools directly by name with appropriate parameters."
+        "text": "✅ **Gmail (Work - Kal) Tools Available** (15 tools)\n\n• **GMAIL_SEND_EMAIL**: Send emails via Gmail\n• **GMAIL_FETCH_EMAILS**: Retrieve emails from Gmail\n• **GMAIL_SEARCH**: Search Gmail messages\n\n**Next Step:** Call `gmail_work_kal__execute_tool` with `tool_name` set to one of the exact tool names above and `parameters` set to that tool's arguments."
       }
     ]
   }
 }
 ```
 
-**Direct Tool Execution (Tier 3):**
+**Wrapper Tool Execution:**
 ```json
 {
   "jsonrpc": "2.0",
   "id": 3,
   "method": "tools/call",
   "params": {
-    "name": "GMAIL_SEND_EMAIL",
+    "name": "gmail_work_kal__execute_tool",
     "arguments": {
-      "to": "colleague@company.com",
-      "subject": "Project Update",
-      "body": "Here's the latest status..."
+      "tool_name": "GMAIL_SEND_EMAIL",
+      "parameters": {
+        "to": "colleague@company.com",
+        "subject": "Project Update",
+        "body": "Here's the latest status..."
+      }
     }
   }
 }
@@ -571,8 +577,8 @@ npx uru-mcp --help
 
 **❌ "Only seeing connection tools, not specific tools"**
 - This is expected behavior! The two-tier system shows service connections first
-- Call a service connection (e.g., "Gmail (Work - Kal)") to explore its tools
-- Then call specific tools directly by name
+- Call a namespace list tool (e.g., `gmail_work_kal__list_tools`) to explore its tools
+- Then call `gmail_work_kal__execute_tool` with the exact provider tool name and parameters
 
 **❌ "Tool not found" errors**
 - Ensure you're calling the exact tool name shown in the exploration phase
@@ -756,6 +762,12 @@ For custom MCP client integration, the server supports:
 - **Key Rotation:** Per-request API keys make key rotation easier and more secure
 
 ## 📋 Changelog
+
+### Version 3.7.0
+- Switched namespace execution to the canonical Uru wrapper contract: `POST /execute/<namespace>__execute_tool` with `{ tool_name, parameters }`
+- Removed legacy personal app-context routing from namespace execution; `uru-mcp` no longer sends `_app_context` or `X-App-Context`
+- Replaced direct provider-tool fallback execution with clear guidance to use `<namespace>__list_tools` and `<namespace>__execute_tool`
+- Added regression coverage for wrapper URL, body, namespace headers, and connected-account headers
 
 ### Version 3.6.8
 - Returned proxy execution failures as MCP `isError` tool results so Claude can read the actual tool failure text instead of only seeing a generic MCP error shell

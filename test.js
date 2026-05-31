@@ -3,6 +3,7 @@
 const assert = require('assert');
 const { spawn } = require('child_process');
 const path = require('path');
+const axios = require('axios');
 
 const ConfigManager = require('./lib/config-manager');
 const UruMCPServer = require('./lib/mcp-server');
@@ -58,6 +59,91 @@ async function main() {
         },
         409
     );
+
+    const originalAxiosPost = axios.post;
+    const postCalls = [];
+    axios.post = async (url, body, options) => {
+        postCalls.push({ url, body, options });
+        return {
+            data: {
+                success: true,
+                successful: true,
+                data: { ok: true },
+            },
+        };
+    };
+
+    try {
+        defaultServer.namespaceManager.namespaceMetadata.set('outlook_lloyd', {
+            connected_account_id: 'ca_U2OlXIVld_vj',
+            server_id: 'server_123',
+        });
+
+        const result = await defaultServer.handleNamespaceExecuteTool(
+            'outlook_lloyd__execute_tool',
+            {
+                tool_name: 'OUTLOOK_GET_PROFILE',
+                parameters: {},
+            },
+            'uru_call_specific_key'
+        );
+
+        assert.deepStrictEqual(result, {
+            content: [
+                {
+                    type: 'text',
+                    text: JSON.stringify({ ok: true }, null, 2),
+                },
+            ],
+        });
+        assert.strictEqual(postCalls.length, 1);
+        assert.strictEqual(
+            postCalls[0].url,
+            'https://mcp.uruintelligence.com/execute/outlook_lloyd__execute_tool'
+        );
+        assert.deepStrictEqual(postCalls[0].body, {
+            tool_name: 'OUTLOOK_GET_PROFILE',
+            parameters: {},
+        });
+        assert.strictEqual(postCalls[0].body._app_context, undefined);
+        assert.strictEqual(
+            postCalls[0].options.headers['X-App-Context'],
+            undefined
+        );
+        assert.strictEqual(
+            postCalls[0].options.headers.Authorization,
+            'Bearer uru_call_specific_key'
+        );
+        assert.strictEqual(
+            postCalls[0].options.headers['X-Namespace'],
+            'outlook_lloyd'
+        );
+        assert.strictEqual(
+            postCalls[0].options.headers['X-Connected-Account-Id'],
+            'ca_U2OlXIVld_vj'
+        );
+        assert.strictEqual(postCalls[0].options.headers['X-Server-Id'], 'server_123');
+
+        await assert.rejects(
+            () =>
+                defaultServer.rejectDirectProviderToolExecution(
+                    'OUTLOOK_GET_PROFILE',
+                    {},
+                    'uru_call_specific_key'
+                ),
+            error =>
+                error &&
+                error.code === -32601 &&
+                String(error.message).includes('Direct tool')
+        );
+        assert.strictEqual(
+            postCalls.length,
+            1,
+            'legacy direct execution must not post a bare provider tool slug'
+        );
+    } finally {
+        axios.post = originalAxiosPost;
+    }
     assert.strictEqual(workspaceErrorResult.isError, true);
     assert.ok(
         workspaceErrorResult.content[0].text.includes(
@@ -162,7 +248,11 @@ const UruMCPServer = require(${JSON.stringify(path.join(__dirname, 'lib', 'mcp-s
         });
     });
 
+    await defaultServer.shutdown('test');
+    await staticServer.shutdown('test');
+
     console.log('PASS regression checks');
+    process.exit(0);
 }
 
 main().catch(error => {
