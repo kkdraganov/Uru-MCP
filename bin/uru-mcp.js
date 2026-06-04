@@ -25,7 +25,7 @@ let shutdownInFlight = false;
 program
     .name('uru-mcp')
     .description('Model Context Protocol (MCP) server for Uru Platform integration')
-    .version('3.6.8')
+    .version('3.7.1')
     .option('-k, --key <key>', 'Authentication token')
     .option('-d, --debug', 'Enable debug mode')
     .option(
@@ -168,30 +168,25 @@ function handleStreamError(streamName, error) {
 }
 
 async function runSetupWizard() {
-    const inquirer = require('inquirer');
+    const { input, confirm } = await import('@inquirer/prompts');
 
     console.log(chalk.yellow('🔧 Uru MCP Setup Wizard\n'));
     console.log(chalk.gray('Proxy URL: https://mcp.uruintelligence.com (fixed)\n'));
 
-    const answers = await inquirer.prompt([
-        {
-            type: 'input',
-            name: 'token',
-            message: 'Enter your Uru API key:',
-            validate: input => {
-                if (!input || input.trim().length === 0) {
-                    return 'Uru API key is required';
-                }
-                return true;
-            },
+    const token = await input({
+        message: 'Enter your Uru API key:',
+        validate: value => {
+            if (!value || value.trim().length === 0) {
+                return 'Uru API key is required';
+            }
+            return true;
         },
-        {
-            type: 'confirm',
-            name: 'debug',
-            message: 'Enable debug mode?',
-            default: false,
-        },
-    ]);
+    });
+    const debug = await confirm({
+        message: 'Enable debug mode?',
+        default: false,
+    });
+    const answers = { token, debug };
 
     // Save configuration
     const configManager = new ConfigManager();
