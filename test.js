@@ -7,6 +7,7 @@ const axios = require('axios');
 
 const ConfigManager = require('./lib/config-manager');
 const UruMCPServer = require('./lib/mcp-server');
+const { IntelligentToolLoader } = require('./lib/tool-loader');
 
 async function main() {
     const configManager = new ConfigManager('/tmp/uru-mcp-test-config.json');
@@ -47,6 +48,51 @@ async function main() {
     assert.deepStrictEqual(staticServer.server._capabilities.tools, {
         listChanged: false,
     });
+
+    const labelRegressionLoader = new IntelligentToolLoader(
+        {
+            fetchNamespacesFromProxy: async () => [
+                {
+                    name: 'gmail_ignition_email',
+                    displayName: 'Gmail - ignition email',
+                    account_label: 'ignition email',
+                },
+                {
+                    name: 'external_mcp_ignition_notes',
+                    displayName: 'Granola - Ignition Notes',
+                    account_label: 'Ignition Notes',
+                },
+            ],
+            createNamespaceDiscoveryTool(appName, displayName) {
+                return {
+                    name: `${appName}__list_tools`,
+                    description: `List tools for ${displayName}`,
+                    annotations: { title: `${displayName} Discovery` },
+                };
+            },
+            createNamespaceExecuteTool(appName, displayName) {
+                return {
+                    name: `${appName}__execute_tool`,
+                    description: `Execute a tool in ${displayName}`,
+                    annotations: { title: `${displayName} Execution` },
+                };
+            },
+        },
+        { getNamespaceTools: () => [] },
+        {}
+    );
+    const discoveryTools = await labelRegressionLoader.getDiscoveryTools();
+    const discoveryText = JSON.stringify(discoveryTools);
+    assert.ok(discoveryText.includes('Gmail - ignition email Discovery'));
+    assert.ok(discoveryText.includes('Gmail - ignition email Execution'));
+    assert.ok(discoveryText.includes('Granola - Ignition Notes Discovery'));
+    assert.ok(!discoveryText.includes('Gmail - ignition email (ignition email)'));
+    assert.ok(
+        !discoveryText.includes(
+            'Granola - Ignition Notes (Ignition Notes)'
+        )
+    );
+    assert.ok(!discoveryText.includes('Gmail Ignition Email Ignition Email'));
 
     const workspaceErrorResult = defaultServer.buildToolErrorResultFromProxyPayload(
         {
