@@ -15,7 +15,7 @@ async function runTests(token, options = {}) {
   console.log(chalk.blue.bold('🧪 Uru MCP Tests\n'));
 
   if (options.debug) {
-    console.log(chalk.gray(`Using token: ${token.substring(0, 20)}...`));
+    console.log(chalk.gray('Authentication: configured'));
     console.log();
   }
 

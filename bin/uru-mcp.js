@@ -13,10 +13,12 @@ const ora = require('ora');
 const path = require('path');
 const fs = require('fs-extra');
 const os = require('os');
+const packageMetadata = require('../package.json');
 
 // Import our MCP server
 const UruMCPServer = require('../lib/mcp-server');
 const ConfigManager = require('../lib/config-manager');
+const { testAuthenticatedAccess } = require('../lib/connection-diagnostics');
 
 const program = new Command();
 let activeServer = null;
@@ -25,7 +27,7 @@ let shutdownInFlight = false;
 program
     .name('uru-mcp')
     .description('Model Context Protocol (MCP) server for Uru Platform integration')
-    .version('3.7.1')
+    .version(packageMetadata.version)
     .option('-k, --key <key>', 'Authentication token')
     .option('-d, --debug', 'Enable debug mode')
     .option(
@@ -118,10 +120,8 @@ async function main() {
             console.error(chalk.gray(`   Proxy: ${config.proxyUrl}`));
             console.error(
                 chalk.gray(
-                    `   Token: ${
-                        config.token
-                            ? config.token.substring(0, 20) + '...'
-                            : 'none (will use per-request API keys)'
+                    `   Authentication: ${
+                        config.token ? 'configured' : 'per-request API keys'
                     }`
                 )
             );
@@ -201,30 +201,27 @@ async function runSetupWizard() {
 }
 
 async function testConnection() {
-    const spinner = ora('Testing connection to proxy...').start();
+    const spinner = ora('Testing authenticated access to Uru...').start();
 
     try {
         const configManager = new ConfigManager();
         const config = await configManager.loadConfig(options);
 
-        if (!config.token) {
-            spinner.fail('No Uru API key configured. Run --setup first.');
-            return;
-        }
-
-        const axios = require('axios');
-        const response = await axios.get(`${config.proxyUrl}/health`, {
-            timeout: 10000,
-            headers: config.token ? { Authorization: `Bearer ${config.token}` } : {},
+        const result = await testAuthenticatedAccess({
+            proxyUrl: config.proxyUrl,
+            token: config.token,
+            timeout: Math.min(config.timeout || 10000, 10000),
         });
 
-        spinner.succeed(`Connection successful! Proxy is healthy (${response.status})`);
-        console.log(chalk.gray(`Response: ${JSON.stringify(response.data, null, 2)}`));
+        spinner.succeed(
+            `Authenticated connection successful (${result.namespaceCount} namespaces; workspace context ready)`
+        );
     } catch (error) {
         spinner.fail(`Connection failed: ${error.message}`);
         if (options.debug) {
             console.error(chalk.gray(error.stack));
         }
+        throw error;
     }
 }
 
