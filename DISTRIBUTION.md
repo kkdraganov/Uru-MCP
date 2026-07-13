@@ -67,7 +67,7 @@ npx github:kkdraganov/Uru-MCP
 
 1. **Installation**: `npx uru-mcp --setup`
 2. **Configuration**: Enter authentication token and optional advanced settings
-3. **Testing**: `npx uru-mcp --test` (includes hierarchical namespace testing)
+3. **Testing**: `npx uru-mcp --test` (validates authenticated namespace discovery, then the current workspace through the read-only tools-sync contract)
 4. **Claude Setup**: `npx uru-mcp --claude-config`
 5. **Usage**: Add to Claude Desktop and experience hierarchical tool discovery
 6. **Advanced Configuration**: Set environment variables for optimization
@@ -110,6 +110,8 @@ npm audit fix
 The proxy at `https://mcp.uruintelligence.com` must support:
 
 - **Health Check**: `GET /health`
+- **Authenticated Diagnostics and Discovery**: `GET /namespaces`
+- **Current Workspace Validation**: `GET /tools/sync/version`
 - **Tool Listing**: `POST /mcp/tools/list` (MCP protocol)
 - **Tool Execution**: `POST /mcp/tools/execute` (MCP protocol)
 - **Authentication**: Bearer token support

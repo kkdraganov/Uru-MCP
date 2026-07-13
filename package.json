@@ -1,6 +1,6 @@
 {
     "name": "uru-mcp",
-    "version": "3.7.1",
+    "version": "3.7.2",
     "description": "MCP-compliant server with hierarchical tool namespacing for Uru Platform integration",
     "main": "index.js",
     "bin": {
@@ -8,7 +8,7 @@
     },
     "scripts": {
         "start": "node index.js",
-        "test": "node test.js",
+        "test": "node test.js && node test/authenticated-diagnostics.test.js",
         "postinstall": "node scripts/postinstall.js",
         "prepack": "node scripts/normalize-eols.js"
     },

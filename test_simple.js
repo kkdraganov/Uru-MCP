@@ -13,7 +13,7 @@ async function testMCPServer(token, options = {}) {
   console.log(chalk.gray('Testing basic server startup and communication\n'));
 
   if (options.debug) {
-    console.log(chalk.gray(`Using token: ${token.substring(0, 20)}...`));
+    console.log(chalk.gray('Authentication: configured'));
   }
   
   // Start the MCP server process

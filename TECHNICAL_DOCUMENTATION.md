@@ -508,10 +508,10 @@ call gmail_work_kal__execute_tool {
 - Network proxy issues
 
 **Solutions**:
-1. Verify API key: `npx uru-mcp --test --token YOUR_KEY`
+1. Verify API key: `npx uru-mcp --test --key YOUR_KEY`
 2. Check token permissions at uru.ai
 3. Test network connectivity to proxy
-4. Use debug mode to see auth headers
+4. Use debug mode for request-flow diagnostics; API keys and auth headers are never logged
 
 ### Debug Mode
 Enable comprehensive logging:
