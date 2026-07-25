@@ -10,12 +10,16 @@ const readline = require('readline');
 async function testActualToolExecution() {
   console.log('🧪 Testing ACTUAL tool execution with uru: prefix...\n');
 
+  if (!process.env.URU_API_KEY) {
+    throw new Error('Set URU_API_KEY before running this live diagnostic');
+  }
+
   // Start the MCP server
   const serverProcess = spawn('node', ['index.js'], {
     env: {
       ...process.env,
-      URU_API_KEY: 'uru_14edb191569cfb3618859094b004451eedc35ff1a6ca23a576055f6ff8c55664',
-      URU_PROXY_URL: 'https://mcp.uruenterprises.com',
+      URU_API_KEY: process.env.URU_API_KEY,
+      URU_PROXY_URL: process.env.URU_PROXY_URL || 'https://mcp.uruintelligence.com',
       URU_DEBUG: 'true'
     },
     stdio: ['pipe', 'pipe', 'pipe']

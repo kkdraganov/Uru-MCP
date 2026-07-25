@@ -1,5 +1,8 @@
-# Ensure executable scripts and JS files use LF in the repository and published tarball
+# Keep source and published artifacts deterministic across development platforms.
+* text=auto
 bin/* text eol=lf
 *.js text eol=lf
+*.json text eol=lf
+*.md text eol=lf
 *.sh text eol=lf
-
+*.yml text eol=lf

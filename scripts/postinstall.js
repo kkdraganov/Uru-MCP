@@ -15,9 +15,9 @@ function checkNodeVersion() {
     const nodeVersion = process.version;
     const majorVersion = parseInt(nodeVersion.slice(1).split('.')[0]);
 
-    if (majorVersion < 18) {
+    if (majorVersion < 20) {
         console.warn(
-            chalk.yellow('Warning: Node.js 18+ is recommended. You have:'),
+            chalk.yellow('Warning: Node.js 20+ is required. You have:'),
             nodeVersion
         );
         return false;
@@ -116,17 +116,21 @@ function showEnvironmentVariables() {
     console.log();
     console.log(chalk.white('Required:'));
     console.log(
-        chalk.cyan('   URU_TOKEN') + chalk.gray('      - Authentication token')
+        chalk.cyan('   URU_API_KEY') + chalk.gray('    - Uru Platform API key')
     );
     console.log();
     console.log(chalk.white('Optional:'));
+    console.log(
+        chalk.cyan('   URU_WORKSPACE_ID') +
+            chalk.gray(' - Workspace selected for this MCP process')
+    );
     console.log(
         chalk.cyan('   URU_DEBUG') +
             chalk.gray('      - Enable debug mode (true/false)')
     );
     console.log();
-    console.log(chalk.white('Proxy URL:'));
-    console.log(chalk.gray('   https://mcp.uruenterprises.com (fixed)'));
+    console.log(chalk.white('Default proxy URL:'));
+    console.log(chalk.gray('   https://mcp.uruintelligence.com'));
     console.log();
 }
 

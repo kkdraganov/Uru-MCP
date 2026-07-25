@@ -13,6 +13,10 @@ const path = require('path');
 async function testResponseFormat() {
   console.log('🔍 Testing Uru MCP Server Response Format...\n');
 
+  if (!process.env.URU_API_KEY) {
+    throw new Error('Set URU_API_KEY before running this live diagnostic');
+  }
+
   // Test request for Gmail tool
   const testRequest = {
     jsonrpc: '2.0',
@@ -21,7 +25,7 @@ async function testResponseFormat() {
     params: {
       name: 'gmail_f7518884.list_tools',
       arguments: {
-        api_key: 'uru_8d51c4379735aab3b70fed88d17934e62834fae9e79e623aaa925c7c713ded4d'
+        api_key: process.env.URU_API_KEY
       }
     }
   };
@@ -33,7 +37,7 @@ async function testResponseFormat() {
       env: {
         ...process.env,
         URU_PROXY_URL: 'http://localhost:3001',
-        URU_API_KEY: 'uru_8d51c4379735aab3b70fed88d17934e62834fae9e79e623aaa925c7c713ded4d'
+        URU_API_KEY: process.env.URU_API_KEY
       },
       stdio: ['pipe', 'pipe', 'pipe']
     });

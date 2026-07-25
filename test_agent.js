@@ -355,9 +355,12 @@ class AgentSimulator {
 
 // Main execution if run directly
 async function main() {
+  if (!process.env.URU_API_KEY) {
+    throw new Error('Set URU_API_KEY before running this live simulation');
+  }
   const config = {
     serverUrl: process.env.URU_PROXY_URL || 'http://localhost:3001',
-    apiKey: process.env.URU_API_KEY || 'uru_14edb191569cfb3618859094b004451eedc35ff1a6ca23a576055f6ff8c55664',
+    apiKey: process.env.URU_API_KEY,
     debug: process.env.URU_DEBUG === 'true'
   };
 

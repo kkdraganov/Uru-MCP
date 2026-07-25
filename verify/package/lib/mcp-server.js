@@ -29,6 +29,7 @@ class UruMCPServer {
         this.config = config;
         this.proxyUrl = config.proxyUrl;
         this.token = config.token;
+        this.workspaceId = config.workspaceId || null;
         this.debug = config.debug;
         this.isConnected = false;
         this._transport = null;
@@ -53,6 +54,7 @@ class UruMCPServer {
         this.namespaceManager = new ToolNamespaceManager({
             proxyUrl: this.proxyUrl,
             token: this.token,
+            workspaceId: this.workspaceId,
             debug: this.debug,
             cacheTimeout: config.cacheTimeout || 30000,
             timeout: config.timeout || 30000,
@@ -75,7 +77,7 @@ class UruMCPServer {
         this.server = new Server(
             {
                 name: 'uru-mcp',
-                version: '3.6.8',
+                version: '3.7.2',
                 title: 'Uru Platform MCP Server',
                 description:
                     'MCP-compliant server with hierarchical tool namespacing for efficient management of 400+ tools',
@@ -83,16 +85,16 @@ class UruMCPServer {
 
 HOW TO USE:
 
-1. DISCOVERY: Call tools/list to see namespace tools (e.g., gmail_work_kal__list_tools, gmail_work_kal__execute_tool)
+1. DISCOVERY: Call tools/list to see namespace tools (e.g., company__list_tools, company__execute_tool)
 
-2. EXPLORATION: Call namespace list_tools (e.g., gmail_work_kal__list_tools) to see available tools in that namespace
+2. EXPLORATION: Call namespace list_tools (e.g., company__list_tools) to see available tools in that namespace
 
-3. EXECUTION: Call namespace execute_tool (e.g., gmail_work_kal__execute_tool) with tool_name and parameters
+3. EXECUTION: Call namespace execute_tool (e.g., company__execute_tool) with tool_name and parameters
 
 EXAMPLE WORKFLOW:
-- Call tools/list → See [gmail_work_kal__list_tools, gmail_work_kal__execute_tool, platform__list_tools, platform__execute_tool, ...]
-- Call gmail_work_kal__list_tools → Shows available Gmail tools
-- Call gmail_work_kal__execute_tool with {"tool_name": "GMAIL_SEND_EMAIL", "parameters": {"to": "user@example.com", "subject": "Test"}} → Email gets sent
+- Call tools/list → See [company__list_tools, company__execute_tool, platform__list_tools, platform__execute_tool, ...]
+- Call company__list_tools → Shows available Company tools
+- Call company__execute_tool with {"tool_name": "EXAMPLE_TOOL", "parameters": {"example_param": "value"}} → Executes the requested Company tool
 
 This hierarchical approach provides full MCP compliance while efficiently managing large tool catalogs.`,
             },
@@ -327,6 +329,133 @@ This hierarchical approach provides full MCP compliance while efficiently managi
         return this.createMcpError(code, message, data);
     }
 
+    extractToolErrorDetail(data, key) {
+        if (!data || typeof data !== 'object') {
+            return null;
+        }
+
+        if (data[key] !== undefined && data[key] !== null) {
+            return data[key];
+        }
+
+        const nestedDetails = data.details;
+        if (
+            nestedDetails &&
+            typeof nestedDetails === 'object' &&
+            nestedDetails[key] !== undefined &&
+            nestedDetails[key] !== null
+        ) {
+            return nestedDetails[key];
+        }
+
+        return null;
+    }
+
+    formatToolErrorText(message, data = null) {
+        const sections = [String(message || 'Tool execution failed').trim()];
+
+        const code =
+            this.extractToolErrorDetail(data, 'upstream_code') ||
+            this.extractToolErrorDetail(data, 'code');
+        if (typeof code === 'string' && code.trim()) {
+            sections.push(`Code: ${code.trim()}`);
+        }
+
+        const recoveryTools = this.extractToolErrorDetail(data, 'recovery_tools');
+        if (Array.isArray(recoveryTools) && recoveryTools.length > 0) {
+            sections.push(`Recovery tools: ${recoveryTools.join(', ')}`);
+        }
+
+        const availableWorkspaces = this.extractToolErrorDetail(
+            data,
+            'available_workspaces'
+        );
+        if (Array.isArray(availableWorkspaces) && availableWorkspaces.length > 0) {
+            const workspaceNames = availableWorkspaces
+                .map(workspace => {
+                    if (typeof workspace === 'string') {
+                        return workspace;
+                    }
+                    if (!workspace || typeof workspace !== 'object') {
+                        return null;
+                    }
+                    if (typeof workspace.name === 'string' && workspace.name.trim()) {
+                        return workspace.name.trim();
+                    }
+                    if (
+                        workspace.workspace &&
+                        typeof workspace.workspace === 'object' &&
+                        typeof workspace.workspace.name === 'string' &&
+                        workspace.workspace.name.trim()
+                    ) {
+                        return workspace.workspace.name.trim();
+                    }
+                    if (typeof workspace.id === 'string' && workspace.id.trim()) {
+                        return workspace.id.trim();
+                    }
+                    if (
+                        typeof workspace.workspace_id === 'string' &&
+                        workspace.workspace_id.trim()
+                    ) {
+                        return workspace.workspace_id.trim();
+                    }
+                    return null;
+                })
+                .filter(Boolean);
+
+            if (workspaceNames.length > 0) {
+                sections.push(
+                    `Available workspaces: ${workspaceNames.join(', ')}`
+                );
+            }
+        }
+
+        const tip =
+            this.extractToolErrorDetail(data, 'tip') ||
+            this.extractToolErrorDetail(data, 'suggestion');
+        if (typeof tip === 'string' && tip.trim()) {
+            sections.push(`Tip: ${tip.trim()}`);
+        }
+
+        return sections.join('\n\n');
+    }
+
+    buildToolErrorResult(message, data = null) {
+        return {
+            content: [
+                {
+                    type: 'text',
+                    text: this.formatToolErrorText(message, data),
+                },
+            ],
+            isError: true,
+        };
+    }
+
+    buildToolErrorResultFromMcpError(
+        error,
+        fallbackMessage = 'Tool execution failed'
+    ) {
+        const message =
+            error && typeof error.message === 'string' && error.message.trim()
+                ? error.message.trim()
+                : fallbackMessage;
+        const data =
+            error && typeof error === 'object' && error.data ? error.data : null;
+        return this.buildToolErrorResult(message, data);
+    }
+
+    buildToolErrorResultFromProxyPayload(
+        payload,
+        status = null,
+        fallbackMessage = 'Tool execution failed',
+        extras = {}
+    ) {
+        const message = this.getProxyErrorMessage(payload, fallbackMessage);
+        const data = this.buildProxyErrorData(payload, status, extras);
+        return this.buildToolErrorResult(message, data);
+    }
+
     /**
      * Start the MCP server
      */
@@ -455,12 +584,16 @@ This hierarchical approach provides full MCP compliance while efficiently managi
         const headers = {
             'Content-Type': 'application/json',
             'User-Agent': 'Uru-MCP-Proxy/1.0.0',
+            'X-Source-Context': 'mcp_claude',
         };
 
         // Use provided API key, fallback to configured token
         const tokenToUse = apiKey || this.token;
         if (tokenToUse) {
             headers['Authorization'] = `Bearer ${tokenToUse}`;
+        }
+        if (this.workspaceId) {
+            headers['X-Workspace-Id'] = this.workspaceId;
         }
 
         return headers;
@@ -616,30 +749,34 @@ This hierarchical approach provides full MCP compliance while efficiently managi
                     );
                 }
 
-                // Handle namespaced tool execution (legacy/backward compatibility)
+                // Reject obsolete direct namespaced tool execution.
                 if (
                     name.includes('__') &&
                     !name.endsWith('__list_tools') &&
                     !name.endsWith('__execute_tool')
                 ) {
-                    return await this.handleNamespacedToolExecution(
+                    return await this.rejectDirectNamespacedToolExecution(
                         name,
                         cleanedArgs,
                         apiKey
                     );
                 }
 
-                // Handle legacy tool names (for backward compatibility during transition)
-                return await this.handleLegacyToolExecution(name, cleanedArgs, apiKey);
+                // Reject obsolete direct provider tool execution.
+                return await this.rejectDirectProviderToolExecution(
+                    name,
+                    cleanedArgs,
+                    apiKey
+                );
             } catch (error) {
                 this.log(`❌ Tool execution failed: ${error.message}`, 'error');
 
                 if (this.isMcpError(error)) {
-                    throw error;
+                    return this.buildToolErrorResultFromMcpError(error);
                 }
 
                 if (error.response?.data) {
-                    throw this.createMcpErrorFromProxyPayload(
+                    return this.buildToolErrorResultFromProxyPayload(
                         error.response.data,
                         error.response.status,
                         `Tool '${request.params.name}' failed`,
@@ -653,8 +790,7 @@ This hierarchical approach provides full MCP compliance while efficiently managi
 
                 // Return proper MCP errors
                 if (error.response?.status === 404) {
-                    throw this.createMcpError(
-                        -32601,
+                    return this.buildToolErrorResult(
                         `Tool '${request.params.name}' not found`,
                         {
                             suggestion:
@@ -662,8 +798,7 @@ This hierarchical approach provides full MCP compliance while efficiently managi
                         }
                     );
                 } else if (error.response?.status === 400) {
-                    throw this.createMcpError(
-                        -32602,
+                    return this.buildToolErrorResult(
                         `Invalid parameters for tool '${request.params.name}'`,
                         {
                             error: error.response.data?.message || 'Bad request',
@@ -671,8 +806,7 @@ This hierarchical approach provides full MCP compliance while efficiently managi
                         }
                     );
                 } else if (error.response?.status === 401) {
-                    throw this.createMcpError(
-                        -32001,
+                    return this.buildToolErrorResult(
                         'Authentication failed during tool execution',
                         {
                             suggestion:
@@ -680,8 +814,7 @@ This hierarchical approach provides full MCP compliance while efficiently managi
                         }
                     );
                 } else if (error.response?.status === 403) {
-                    throw this.createMcpError(
-                        -32002,
+                    return this.buildToolErrorResult(
                         `Access denied for tool '${request.params.name}'`,
                         {
                             suggestion:
@@ -692,8 +825,7 @@ This hierarchical approach provides full MCP compliance while efficiently managi
                     error.code === 'ECONNREFUSED' ||
                     error.code === 'ENOTFOUND'
                 ) {
-                    throw this.createMcpError(
-                        -32003,
+                    return this.buildToolErrorResult(
                         'Cannot connect to Uru Platform during tool execution',
                         {
                             suggestion: 'Check your internet connection and try again',
@@ -701,9 +833,8 @@ This hierarchical approach provides full MCP compliance while efficiently managi
                     );
                 }
 
-                // For other errors, return a generic error response
-                throw this.createMcpError(
-                    -32000,
+                // Return an MCP tool result so the model can read the failure.
+                return this.buildToolErrorResult(
                     `Tool execution failed: ${error.message}`,
                     {
                         tool: request.params.name,
@@ -760,6 +891,27 @@ This hierarchical approach provides full MCP compliance while efficiently managi
                 );
             }
 
+            const structuredContent = {
+                namespace,
+                app_name: appName,
+                count: filteredTools.length,
+                returned: filteredTools.length,
+                limit: filteredTools.length,
+                offset: 0,
+                has_more: false,
+                next_offset: null,
+                tools: filteredTools.map(tool => ({
+                    name: tool.originalName || tool.name,
+                    description: tool.description || '',
+                    category: tool.annotations?.category || 'general',
+                    ...(tool.inputSchema ? { inputSchema: tool.inputSchema } : {}),
+                })),
+                filters: {
+                    ...(args?.filter ? { filter: args.filter } : {}),
+                    ...(args?.category ? { category: args.category } : {}),
+                },
+            };
+
             return {
                 content: [
                     {
@@ -772,6 +924,7 @@ This hierarchical approach provides full MCP compliance while efficiently managi
                         ),
                     },
                 ],
+                structuredContent,
             };
         } catch (error) {
             this.log(
@@ -978,11 +1131,13 @@ This hierarchical approach provides full MCP compliance while efficiently managi
         );
 
         try {
-            // Execute the tool via proxy with namespace for connection routing
-            const result = await this.executeToolOnProxy(
+            // Execute through the canonical wrapper route. The proxy contract is:
+            // POST /execute/<namespace>__execute_tool
+            // { tool_name, parameters }
+            const result = await this.executeWrapperToolOnProxy(
+                toolName,
                 targetToolName,
                 toolParameters,
-                appName,
                 apiKey,
                 namespace
             );
@@ -995,7 +1150,10 @@ This hierarchical approach provides full MCP compliance while efficiently managi
 
             // Ensure the result has the correct MCP format
             if (!result || !result.content || !Array.isArray(result.content)) {
-                this.log(`⚠️ Invalid result format from executeToolOnProxy`, 'warn');
+                this.log(
+                    `⚠️ Invalid result format from executeWrapperToolOnProxy`,
+                    'warn'
+                );
                 return {
                     content: [
                         {
@@ -1038,145 +1196,69 @@ This hierarchical approach provides full MCP compliance while efficiently managi
     }
 
     /**
-     * Handle namespaced tool execution (legacy/backward compatibility)
+     * Reject obsolete direct namespaced tool execution.
      */
-    async handleNamespacedToolExecution(toolName, args, apiKey) {
-        this.log(`🔧 Executing namespaced tool: ${toolName}`);
-
-        // Check if tool is in registry
-        let tool = this.toolRegistry.getTool(toolName);
-
-        if (!tool) {
-            // Try to load the namespace for this tool
-            const [namespace] = toolName.split('__');
-            this.log(`🔍 Loading namespace ${namespace} for tool ${toolName}`);
-
-            try {
-                await this.toolLoader.loadNamespace(namespace);
-                tool = this.toolRegistry.getTool(toolName);
-            } catch (error) {
-                this.log(
-                    `❌ Failed to load namespace ${namespace}: ${error.message}`,
-                    'error'
-                );
+    async rejectDirectNamespacedToolExecution(toolName, args, apiKey) {
+        void args;
+        void apiKey;
+        const namespace = String(toolName || '').split('__')[0] || '<namespace>';
+        throw this.createMcpError(
+            -32601,
+            `Direct namespaced tool '${toolName}' is no longer supported`,
+            {
+                suggestion: `Use ${namespace}__execute_tool with tool_name set to the provider tool name and parameters set to that tool's arguments.`,
             }
-        }
-
-        if (!tool) {
-            throw this.createMcpError(-32601, `Tool '${toolName}' not found`, {
-                suggestion: `Use ${
-                    toolName.split('__')[0]
-                }__list_tools to discover available tools`,
-            });
-        }
-
-        // Extract original tool name and app context
-        const namespace = tool.namespace;
-        const originalToolName = tool.originalName;
-        const appName = this.namespaceManager.denormalizeNamespace(namespace);
-
-        this.log(
-            `🔧 Executing tool '${originalToolName}' in app '${appName}' with namespace '${namespace}'`
-        );
-
-        // Execute the tool via proxy with namespace for connection routing
-        return await this.executeToolOnProxy(
-            originalToolName,
-            args,
-            appName,
-            apiKey,
-            namespace
         );
     }
 
     /**
-     * Handle legacy tool execution (for backward compatibility)
+     * Reject obsolete direct provider tool execution.
      */
-    async handleLegacyToolExecution(toolName, args, apiKey) {
-        this.log(`🔍 Searching for legacy tool '${toolName}' across all namespaces`);
-
-        try {
-            const apps = await this.namespaceManager.fetchAppsFromProxy(apiKey);
-
-            for (const appName of apps) {
-                try {
-                    const namespace = this.namespaceManager.normalizeNamespace(appName);
-
-                    // Load namespace if not already loaded
-                    if (!this.toolRegistry.isNamespaceLoaded(namespace)) {
-                        await this.toolLoader.loadNamespace(namespace, apiKey);
-                    }
-
-                    // Check if tool exists in this namespace
-                    const namespacedToolName = `${namespace}.${toolName}`;
-                    const tool = this.toolRegistry.getTool(namespacedToolName);
-
-                    if (tool) {
-                        this.log(
-                            `🔧 Found legacy tool '${toolName}' in namespace '${namespace}' - executing`
-                        );
-                        return await this.executeToolOnProxy(
-                            tool.originalName || toolName,
-                            args,
-                            appName,
-                            apiKey,
-                            namespace
-                        );
-                    }
-                } catch (error) {
-                    this.log(
-                        `⚠️ Error checking namespace '${appName}' for tool '${toolName}': ${error.message}`,
-                        'warn'
-                    );
-                }
+    async rejectDirectProviderToolExecution(toolName, args, apiKey) {
+        void args;
+        void apiKey;
+        throw this.createMcpError(
+            -32601,
+            `Direct tool '${toolName}' is no longer supported`,
+            {
+                suggestion:
+                    'Call tools/list, then use <namespace>__list_tools to inspect provider tools and <namespace>__execute_tool to execute one.',
             }
-
-            throw this.createMcpError(
-                -32601,
-                `Tool '${toolName}' not found in any namespace`,
-                {
-                    suggestion: 'Use namespace_list_tools to discover available tools',
-                }
-            );
-        } catch (error) {
-            if (error.code) throw error; // Re-throw MCP errors
-            throw this.createMcpError(
-                -32000,
-                `Failed to search for tool '${toolName}': ${error.message}`
-            );
-        }
+        );
     }
 
     /**
-     * Execute tool on proxy using REST API endpoint with enhanced namespace routing
-     * @param {string} toolName - Name of the tool to execute
-     * @param {object} parameters - Tool parameters
-     * @param {string} appName - App name for context
+     * Execute a provider subtool through the canonical wrapper route.
+     * @param {string} wrapperToolName - Wrapper tool name (e.g., outlook_lloyd__execute_tool)
+     * @param {string} subToolName - Provider-native tool name (e.g., OUTLOOK_GET_PROFILE)
+     * @param {object} parameters - Provider tool parameters
      * @param {string} apiKey - Optional API key to use for this request
-     * @param {string} namespace - Optional namespace for connection metadata lookup
+     * @param {string} namespace - Namespace for connection metadata lookup
      */
-    async executeToolOnProxy(
-        toolName,
+    async executeWrapperToolOnProxy(
+        wrapperToolName,
+        subToolName,
         parameters,
-        appName,
         apiKey = null,
         namespace = null
     ) {
-        // Connection metadata for routing (declared outside try so catch can reference it)
         let connectionMetadata = null;
 
         try {
-            this.log(
-                `🔧 Executing tool '${toolName}' in app '${appName}' (namespace: ${
-                    namespace || 'none'
-                })`
-            );
+            if (!subToolName || typeof subToolName !== 'string') {
+                throw this.createMcpError(-32602, 'Missing required parameter: tool_name');
+            }
+            if (
+                parameters === null ||
+                typeof parameters !== 'object' ||
+                Array.isArray(parameters)
+            ) {
+                throw this.createMcpError(
+                    -32602,
+                    'Wrapper MCP tool parameters must be an object'
+                );
+            }
 
-            // Use the tool name directly for proxy execution
-            const toolSlug = toolName;
-
-            // Get connection metadata if namespace is provided
-            let connectionMetadata = null;
             if (namespace) {
                 connectionMetadata =
                     this.namespaceManager.getNamespaceMetadata(namespace);
@@ -1186,119 +1268,50 @@ This hierarchical approach provides full MCP compliance while efficiently managi
                             connectionMetadata
                         )}`
                     );
-                } else {
-                    this.log(
-                        `⚠️ No connection metadata found for namespace '${namespace}', falling back to app context`
-                    );
                 }
             }
 
-            // Build request body with enhanced routing context
             const requestBody = {
-                ...(parameters || {}),
-                _app_context: appName, // Legacy app context for backward compatibility
+                tool_name: subToolName,
+                parameters,
             };
-
-            // Add connection metadata if available
-            if (connectionMetadata && connectionMetadata.connected_account_id) {
-                requestBody._connected_account_id =
-                    connectionMetadata.connected_account_id;
-                requestBody._server_id = connectionMetadata.server_id;
-                this.log(
-                    `🎯 Using connected_account_id: ${connectionMetadata.connected_account_id}`
-                );
-            }
 
             const headers = {
                 ...this.getAuthHeaders(apiKey),
                 'Content-Type': 'application/json',
-                'X-App-Context': appName, // Legacy header for backward compatibility
             };
 
-            // Add connection metadata to headers if available
+            if (namespace) {
+                headers['X-Namespace'] = namespace;
+            }
             if (connectionMetadata && connectionMetadata.connected_account_id) {
                 headers['X-Connected-Account-Id'] =
                     connectionMetadata.connected_account_id;
-                if (connectionMetadata.server_id) {
-                    headers['X-Server-Id'] = connectionMetadata.server_id;
-                }
+            }
+            if (connectionMetadata && connectionMetadata.server_id) {
+                headers['X-Server-Id'] = connectionMetadata.server_id;
             }
 
             const response = await axios.post(
-                `${this.proxyUrl}/execute/${encodeURIComponent(toolSlug)}`,
+                `${this.proxyUrl}/execute/${encodeURIComponent(wrapperToolName)}`,
                 requestBody,
                 {
-                    // Standardize timeout to 3 minutes
                     timeout: this.config.timeout || 180000,
                     headers,
                 }
             );
 
-            this.log(
-                `📊 Tool execution response: ${JSON.stringify(response.data, null, 2)}`
+            return this.formatProxyExecuteResponse(
+                response.data,
+                wrapperToolName,
+                subToolName,
+                namespace
             );
-
-            // Handle the response according to the architecture
-            // The architecture specifies normalized responses: {data, successful, error, log_id}
-            // Also handle backend responses that use 'success' instead of 'successful'
-            if (response.data && typeof response.data === 'object') {
-                if (
-                    response.data.successful === false ||
-                    response.data.success === false
-                ) {
-                    throw this.createMcpErrorFromProxyPayload(
-                        response.data,
-                        response.status,
-                        `Tool '${toolName}' failed`,
-                        {
-                            tool: toolName,
-                            app: appName,
-                        }
-                    );
-                }
-
-                // Return MCP-compliant response format
-                let responseText;
-                if (response.data.data !== undefined) {
-                    responseText =
-                        typeof response.data.data === 'string'
-                            ? response.data.data
-                            : JSON.stringify(response.data.data, null, 2);
-                } else {
-                    // Fallback if data field is missing - use the whole response
-                    responseText = JSON.stringify(response.data, null, 2);
-                }
-
-                const result = {
-                    content: [
-                        {
-                            type: 'text',
-                            text: responseText,
-                        },
-                    ],
-                };
-
-                return result;
-            } else {
-                // Fallback for non-standard response
-                const result = {
-                    content: [
-                        {
-                            type: 'text',
-                            text:
-                                typeof response.data === 'string'
-                                    ? response.data
-                                    : JSON.stringify(response.data, null, 2),
-                        },
-                    ],
-                };
-
-                return result;
-            }
         } catch (error) {
-            // Enhanced error logging for debugging
-            this.log(`❌ Tool execution failed for '${toolName}':`, 'error');
-            this.log(`   App: ${appName}`, 'error');
+            this.log(
+                `❌ Wrapper tool execution failed for '${wrapperToolName}' -> '${subToolName}':`,
+                'error'
+            );
             this.log(`   Namespace: ${namespace || 'none'}`, 'error');
             this.log(
                 `   Connection metadata: ${
@@ -1319,55 +1332,63 @@ This hierarchical approach provides full MCP compliance while efficiently managi
             if (this.isMcpError(error)) {
                 throw error;
             }
-
             if (error.response?.data) {
                 throw this.createMcpErrorFromProxyPayload(
                     error.response.data,
                     error.response.status,
-                    `Tool '${toolName}' failed`,
+                    `Tool '${subToolName}' failed`,
                     {
-                        tool: toolName,
-                        app: appName,
+                        tool: subToolName,
+                        wrapper_tool: wrapperToolName,
                         namespace,
-                        suggestion:
-                            namespace && error.response.status === 404
-                                ? `Tool '${toolName}' not found. Try calling ${namespace}__list_tools to see available tools.`
-                                : undefined,
                     }
                 );
             }
+            throw error;
+        }
+    }
 
-            // Provide specific error messages based on HTTP status
-            if (error.response?.status === 404) {
-                const suggestion = namespace
-                    ? `Tool '${toolName}' not found. Try calling ${namespace}_list_tools to see available tools.`
-                    : `Tool '${toolName}' not found on proxy. Check if the tool name is correct.`;
-                throw new Error(suggestion);
-            } else if (error.response?.status === 400) {
-                const details =
-                    error.response.data?.message ||
-                    error.response.data?.error ||
-                    'Bad request';
-                throw new Error(
-                    `Invalid parameters for tool '${toolName}': ${details}`
-                );
-            } else if (error.response?.status === 401) {
-                throw new Error('Authentication failed. Check your API key or token.');
-            } else if (error.response?.status === 403) {
-                const suggestion = connectionMetadata
-                    ? `Access denied for tool '${toolName}'. The connected account may not have permission or the connection may be inactive.`
-                    : `Access denied for tool '${toolName}'. Check your permissions.`;
-                throw new Error(suggestion);
-            } else if (error.response?.status === 500) {
-                throw new Error(
-                    `Server error executing tool '${toolName}'. This may be a temporary issue - please try again.`
-                );
-            } else {
-                throw new Error(
-                    `Proxy error executing '${toolName}': ${error.message}`
+    formatProxyExecuteResponse(responseData, toolName, subToolName, namespace = null) {
+        if (responseData && typeof responseData === 'object') {
+            if (responseData.successful === false || responseData.success === false) {
+                throw this.createMcpErrorFromProxyPayload(
+                    responseData,
+                    200,
+                    `Tool '${toolName}' failed`,
+                    { tool: toolName }
                 );
             }
         }
+
+        const payload =
+            responseData &&
+            typeof responseData === 'object' &&
+            responseData.data !== undefined
+                ? responseData.data
+                : responseData;
+        const structuredContent =
+            payload &&
+            typeof payload === 'object' &&
+            payload.ok !== undefined &&
+            typeof payload.namespace === 'string' &&
+            typeof payload.tool_name === 'string'
+                ? payload
+                : {
+                      ok: true,
+                      namespace:
+                          namespace || String(toolName || '').replace(/__execute_tool$/, ''),
+                      tool_name: subToolName || toolName,
+                      result: payload,
+                  };
+        return {
+            content: [
+                {
+                    type: 'text',
+                    text: JSON.stringify(structuredContent, null, 2),
+                },
+            ],
+            structuredContent,
+        };
     }
 
     /**

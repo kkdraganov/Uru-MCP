@@ -4,7 +4,7 @@ A Model Context Protocol (MCP) server that provides AI assistants with access to
 
 ## Overview
 
-**Uru MCP v3.7.1** enables AI assistants to work directly with Uru Platform services through the Model Context Protocol. The server provides a standardized, MCP-compliant interface for accessing Uru's AI tools and capabilities via an innovative hierarchical tool namespace system with dynamic loading, intelligent caching, and automatic cleanup.
+**Uru MCP v3.7.2** enables AI assistants to work directly with Uru Platform services through the Model Context Protocol. The server provides a standardized, MCP-compliant interface for accessing Uru's AI tools and capabilities via an innovative hierarchical tool namespace system with dynamic loading, intelligent caching, and automatic cleanup.
 
 The server works seamlessly with MCP client applications such as [Claude Desktop](https://claude.ai/download), [VS Code](https://code.visualstudio.com/docs/copilot/chat/mcp-servers), [Cursor](https://www.cursor.com/), and other MCP-compatible clients.
 
@@ -180,6 +180,7 @@ call gmail_work_kal__execute_tool {
 URU_API_KEY="your-uru-platform-token"
 
 # Optional
+URU_WORKSPACE_ID="your-workspace-id"                 # Select the workspace for this MCP process
 URU_DEBUG="true"                                    # Enable debug logging
 URU_PROXY_URL="https://mcp.uruintelligence.com"    # MCP proxy endpoint
 URU_TOOL_SYNC_POLL_MS="60000"                      # Tools version poll interval (ms)
@@ -190,7 +191,7 @@ URU_ENABLE_TOOL_LIST_CHANGED="true"                # Set to false to disable liv
 
 ### Prerequisites
 
-- **Node.js 18+** (required)
+- **Node.js 20+** (required)
 - **Uru Platform API key** (required)
 
 ### 1. Install MCP Server
@@ -207,6 +208,7 @@ Add the server configuration to your MCP settings file. MCP servers can be insta
       "args": ["uru-mcp"],
       "env": {
         "URU_API_KEY": "your-auth-token-here",
+        "URU_WORKSPACE_ID": "your-workspace-id",
         "URU_MAX_TOOLS_PER_PAGE": "200",
         "URU_PRELOAD_NAMESPACES": "platform,company"
       }
@@ -273,6 +275,7 @@ npx uru-mcp --setup
 **Environment Variables:**
 ```bash
 export URU_API_KEY="your-auth-token-here"
+export URU_WORKSPACE_ID="your-workspace-id"
 export URU_DEBUG="false"
 ```
 
@@ -291,6 +294,7 @@ npx uru-mcp --key your-api-key-here
 
 #### Optional
 
+- `URU_WORKSPACE_ID`: Workspace selected for discovery and execution by this MCP process
 - `URU_DEBUG`: Enable debug mode (`true` or `false`, defaults to `false`)
 - `URU_PROXY_URL`: MCP proxy URL (defaults to `https://mcp.uruintelligence.com`, use `http://localhost:3001` for development)
 - `URU_TOOL_SYNC_POLL_MS`: Poll interval for tools version checks when live tool updates are enabled (defaults to `60000`)
@@ -366,7 +370,7 @@ The server uses JSON-RPC 2.0 over STDIO. All communication follows the MCP speci
 ```json
 {
   "name": "uru-mcp",
-  "version": "3.7.1",
+  "version": "3.7.2",
   "title": "Uru Platform MCP Server",
   "description": "Model Context Protocol server providing access to Uru Platform AI tools and capabilities"
 }
@@ -538,6 +542,7 @@ npx uru-mcp --help
 | Option | Environment Variable | Description |
 |--------|---------------------|-------------|
 | `--key` | `URU_API_KEY` | Uru Platform API key |
+| `--workspace-id` | `URU_WORKSPACE_ID` | Select the workspace for discovery and execution |
 | `--debug` | `URU_DEBUG` | Enable debug logging |
 
 ## 🔍 Troubleshooting
@@ -569,7 +574,7 @@ npx uru-mcp --help
 - Ensure the `URU_API_KEY` environment variable is set correctly
 
 **❌ "Server startup failures"**
-- Check that Node.js 18+ is installed
+- Check that Node.js 20+ is installed
 - Verify the Uru API key is provided
 - Enable debug mode for detailed error information
 
@@ -762,6 +767,14 @@ For custom MCP client integration, the server supports:
 - **Key Rotation:** Per-request API keys make key rotation easier and more secure
 
 ## 📋 Changelog
+
+### Version 3.7.2
+
+- Added explicit `URU_WORKSPACE_ID` propagation to namespace discovery and tool execution
+- Added canonical `structuredContent` envelopes for hierarchical discovery and execution so MCP clients can validate output schemas without parsing display text
+- Added OAuth bearer support to the legacy namespace/execute boundary used by stdio clients
+- Added `X-Source-Context: mcp_claude` to preserve client-surface attribution across the proxy boundary
+- Updated package dependencies, CI, and trusted npm publishing with provenance
 
 ### Version 3.7.1
 

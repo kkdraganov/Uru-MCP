@@ -27,6 +27,7 @@ async function main() {
     const baseConfig = configManager.validateConfig({
         proxyUrl: 'https://mcp.uruintelligence.com',
         token: 'uru_test_token',
+        workspaceId: 'workspace-a',
         debug: false,
         timeout: 30000,
         retries: 3,
@@ -34,6 +35,14 @@ async function main() {
         toolSyncPollMs: 60000,
         enableToolListChanged: true,
     });
+    assert.strictEqual(
+        (
+            await configManager.loadConfig({
+                workspaceId: 'workspace-from-cli',
+            })
+        ).workspaceId,
+        'workspace-from-cli'
+    );
 
     const defaultServer = new UruMCPServer(baseConfig);
     assert.strictEqual(
@@ -138,9 +147,24 @@ async function main() {
             content: [
                 {
                     type: 'text',
-                    text: JSON.stringify({ ok: true }, null, 2),
+                    text: JSON.stringify(
+                        {
+                            ok: true,
+                            namespace: 'outlook_lloyd',
+                            tool_name: 'OUTLOOK_GET_PROFILE',
+                            result: { ok: true },
+                        },
+                        null,
+                        2
+                    ),
                 },
             ],
+            structuredContent: {
+                ok: true,
+                namespace: 'outlook_lloyd',
+                tool_name: 'OUTLOOK_GET_PROFILE',
+                result: { ok: true },
+            },
         });
         assert.strictEqual(postCalls.length, 1);
         assert.strictEqual(
@@ -159,6 +183,14 @@ async function main() {
         assert.strictEqual(
             postCalls[0].options.headers.Authorization,
             'Bearer uru_call_specific_key'
+        );
+        assert.strictEqual(
+            postCalls[0].options.headers['X-Workspace-Id'],
+            'workspace-a'
+        );
+        assert.strictEqual(
+            postCalls[0].options.headers['X-Source-Context'],
+            'mcp_claude'
         );
         assert.strictEqual(
             postCalls[0].options.headers['X-Namespace'],
@@ -189,6 +221,56 @@ async function main() {
         );
     } finally {
         axios.post = originalAxiosPost;
+    }
+
+    assert.strictEqual(
+        defaultServer.namespaceManager.getAuthHeaders()['X-Workspace-Id'],
+        'workspace-a'
+    );
+    assert.strictEqual(
+        defaultServer.namespaceManager.getAuthHeaders()['X-Source-Context'],
+        'mcp_claude'
+    );
+    const originalLoadNamespace = defaultServer.toolLoader.loadNamespace;
+    defaultServer.toolLoader.loadNamespace = async () => [
+        {
+            name: 'platform__automation_query',
+            originalName: 'automation_query',
+            description: 'Read automations',
+            inputSchema: { type: 'object', properties: { op: { type: 'string' } } },
+            annotations: { category: 'automation' },
+        },
+    ];
+    try {
+        const discovery = await defaultServer.handleNamespaceDiscovery(
+            'platform__list_tools',
+            {},
+            'uru_call_specific_key'
+        );
+        assert.deepStrictEqual(discovery.structuredContent, {
+            namespace: 'platform',
+            app_name: 'platform',
+            count: 1,
+            returned: 1,
+            limit: 1,
+            offset: 0,
+            has_more: false,
+            next_offset: null,
+            tools: [
+                {
+                    name: 'automation_query',
+                    description: 'Read automations',
+                    category: 'automation',
+                    inputSchema: {
+                        type: 'object',
+                        properties: { op: { type: 'string' } },
+                    },
+                },
+            ],
+            filters: {},
+        });
+    } finally {
+        defaultServer.toolLoader.loadNamespace = originalLoadNamespace;
     }
     assert.strictEqual(workspaceErrorResult.isError, true);
     assert.ok(

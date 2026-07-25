@@ -30,7 +30,7 @@ async function runTests(token, options = {}) {
     // Test default config
     const config = await configManager.loadConfig();
     
-    if (config.proxyUrl === 'https://mcp.uruenterprises.com') {
+    if (config.proxyUrl === 'https://mcp.uruintelligence.com') {
       console.log(chalk.green('✅ Default proxy URL is correct'));
       passed++;
     } else {
@@ -40,7 +40,7 @@ async function runTests(token, options = {}) {
 
     // Test config validation
     const validConfig = configManager.validateConfig({
-      proxyUrl: 'https://mcp.uruenterprises.com',
+      proxyUrl: 'https://mcp.uruintelligence.com',
       token: 'test-token',
       debug: false
     });
@@ -65,7 +65,7 @@ async function runTests(token, options = {}) {
     console.log(chalk.yellow('Test 2: MCP Server Creation and Compliance'));
 
     const testConfig = {
-      proxyUrl: 'https://mcp.uruenterprises.com',
+      proxyUrl: 'https://mcp.uruintelligence.com',
       token: token,
       debug: options.debug || false,
       timeout: 5000
@@ -126,7 +126,7 @@ async function runTests(token, options = {}) {
     console.log(chalk.yellow('Test 3: Logging Capability'));
 
     const testConfig = {
-      proxyUrl: 'https://mcp.uruenterprises.com',
+      proxyUrl: 'https://mcp.uruintelligence.com',
       token: token,
       debug: true,
       timeout: 5000

@@ -23,7 +23,7 @@ async function main() {
     // Validate configuration - token is now optional
     if (!config.token) {
       console.error('⚠️  No authentication token configured. API key must be provided in tool arguments.');
-      console.error('   To configure a default token: Set URU_TOKEN environment variable or run: npx uru-mcp --setup');
+      console.error('   To configure a default token: Set URU_API_KEY or run: npx uru-mcp --setup');
       console.error('   For MCP client configuration examples, run: npx uru-mcp --claude-config');
     }
 

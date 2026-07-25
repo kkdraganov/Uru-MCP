@@ -25,8 +25,9 @@ let shutdownInFlight = false;
 program
     .name('uru-mcp')
     .description('Model Context Protocol (MCP) server for Uru Platform integration')
-    .version('3.6.8')
+    .version('3.7.2')
     .option('-k, --key <key>', 'Authentication token')
+    .option('-w, --workspace-id <id>', 'Workspace selected for this MCP process')
     .option('-d, --debug', 'Enable debug mode')
     .option(
         '-p, --proxy-url <url>',
@@ -43,10 +44,12 @@ Examples:
   $ npx uru-mcp --test                     # Test connection
   $ npx uru-mcp --claude-config            # Show MCP client config
   $ npx uru-mcp --key your-api-key-here    # Start MCP server
+  $ npx uru-mcp --workspace-id your-workspace-id  # Select workspace
   $ npx uru-mcp --proxy-url http://localhost:3001  # Use development proxy
 
 Environment Variables:
   URU_API_KEY        Authentication API key (required)
+  URU_WORKSPACE_ID   Workspace selected for this MCP process
   URU_DEBUG          Enable debug mode (true/false)
   URU_PROXY_URL      MCP proxy URL (default: https://mcp.uruintelligence.com)
   URU_ENABLE_TOOL_LIST_CHANGED  Enable live tools/list_changed notifications (default: true)
@@ -168,30 +171,25 @@ function handleStreamError(streamName, error) {
 }
 
 async function runSetupWizard() {
-    const inquirer = require('inquirer');
+    const { input, confirm } = await import('@inquirer/prompts');
 
     console.log(chalk.yellow('🔧 Uru MCP Setup Wizard\n'));
     console.log(chalk.gray('Proxy URL: https://mcp.uruintelligence.com (fixed)\n'));
 
-    const answers = await inquirer.prompt([
-        {
-            type: 'input',
-            name: 'token',
-            message: 'Enter your Uru API key:',
-            validate: input => {
-                if (!input || input.trim().length === 0) {
-                    return 'Uru API key is required';
-                }
-                return true;
-            },
+    const token = await input({
+        message: 'Enter your Uru API key:',
+        validate: value => {
+            if (!value || value.trim().length === 0) {
+                return 'Uru API key is required';
+            }
+            return true;
         },
-        {
-            type: 'confirm',
-            name: 'debug',
-            message: 'Enable debug mode?',
-            default: false,
-        },
-    ]);
+    });
+    const debug = await confirm({
+        message: 'Enable debug mode?',
+        default: false,
+    });
+    const answers = { token, debug };
 
     // Save configuration
     const configManager = new ConfigManager();
