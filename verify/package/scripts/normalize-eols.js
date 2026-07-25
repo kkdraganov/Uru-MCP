@@ -27,12 +27,12 @@ function normalizeFile(file) {
         const rel = path.relative(root, f).replace(/\\/g, '/');
         if (rel.startsWith('node_modules/')) return false;
         if (rel.startsWith('.git/')) return false;
+        if (rel.startsWith('verify/')) return false;
         return (
             rel.startsWith('bin/') ||
             rel.startsWith('lib/') ||
             rel.startsWith('scripts/') ||
-            rel === 'index.js' ||
-            rel.endsWith('.js')
+            rel === 'index.js'
         );
     });
 

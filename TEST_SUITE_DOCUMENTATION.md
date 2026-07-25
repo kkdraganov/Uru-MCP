@@ -75,7 +75,7 @@ node test_client.js --key YOUR_API_KEY_HERE --quick
 node test_client.js --key YOUR_API_KEY_HERE --test-mode standalone
 
 # Run with specific API key for testing
-node test_client.js --key uru_14edb191569cfb3618859094b004451eedc35ff1a6ca23a576055f6ff8c55664 --local
+node test_client.js --key "$URU_API_KEY" --local
 ```
 
 ### Test Modes
@@ -153,7 +153,7 @@ The test suite is designed for CI/CD integration:
 ### Common Issues
 
 #### Connection Failures
-- Verify URU_TOKEN is valid and has proper permissions
+- Verify `URU_API_KEY` is valid and has the required permissions
 - Check network connectivity to Uru Platform
 - Ensure MCP server is properly installed
 

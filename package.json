@@ -1,6 +1,6 @@
 {
     "name": "uru-mcp",
-    "version": "3.7.1",
+    "version": "3.7.2",
     "description": "MCP-compliant server with hierarchical tool namespacing for Uru Platform integration",
     "main": "index.js",
     "bin": {
@@ -34,17 +34,20 @@
         "url": "https://github.com/kkdraganov/Uru-MCP/issues"
     },
     "engines": {
-        "node": ">=18.0.0"
+        "node": ">=20.0.0"
     },
     "dependencies": {
         "@inquirer/prompts": "^8.5.1",
         "@modelcontextprotocol/sdk": "^1.29.0",
-        "axios": "^1.16.1",
+        "axios": "^1.18.1",
         "chalk": "^4.1.2",
         "commander": "^12.0.0",
         "dotenv": "^16.5.0",
         "fs-extra": "^11.3.5",
         "ora": "^5.4.1"
+    },
+    "overrides": {
+        "@hono/node-server": "2.0.11"
     },
     "files": [
         "bin/",
@@ -57,6 +60,7 @@
     ],
     "preferGlobal": false,
     "publishConfig": {
-        "access": "public"
+        "access": "public",
+        "provenance": true
     }
 }

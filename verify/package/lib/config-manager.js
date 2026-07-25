@@ -34,6 +34,7 @@ class ConfigManager {
         const config = {
             proxyUrl: 'https://mcp.uruintelligence.com',
             token: null,
+            workspaceId: null,
             debug: false,
             // Standardize all MCP timeouts to 3 minutes (180000 ms)
             timeout: 180000,
@@ -57,6 +58,7 @@ class ConfigManager {
                 if (fileConfig.token) config.token = fileConfig.token;
                 if (fileConfig.debug !== undefined) config.debug = fileConfig.debug;
                 if (fileConfig.proxyUrl) config.proxyUrl = fileConfig.proxyUrl;
+                if (fileConfig.workspaceId) config.workspaceId = fileConfig.workspaceId;
                 if (fileConfig.timeout !== undefined) {
                     config.timeout = Number(fileConfig.timeout);
                 }
@@ -91,6 +93,9 @@ class ConfigManager {
         }
         if (process.env.URU_PROXY_URL) {
             config.proxyUrl = process.env.URU_PROXY_URL;
+        }
+        if (process.env.URU_WORKSPACE_ID) {
+            config.workspaceId = process.env.URU_WORKSPACE_ID;
         }
         if (process.env.URU_TOOL_SYNC_POLL_MS) {
             config.toolSyncPollMs = parseInt(process.env.URU_TOOL_SYNC_POLL_MS, 10);
@@ -129,6 +134,9 @@ class ConfigManager {
         if (cliOptions.proxyUrl) {
             config.proxyUrl = cliOptions.proxyUrl;
         }
+        if (cliOptions.workspaceId) {
+            config.workspaceId = cliOptions.workspaceId;
+        }
 
         // Validate and normalize configuration
         return this.validateConfig(config);
@@ -166,6 +174,16 @@ class ConfigManager {
             } catch (error) {
                 throw new Error(`Invalid proxy URL: ${validated.proxyUrl}`);
             }
+        }
+
+        if (validated.workspaceId !== null && validated.workspaceId !== undefined) {
+            if (
+                typeof validated.workspaceId !== 'string' ||
+                validated.workspaceId.trim() === ''
+            ) {
+                throw new Error('workspaceId must be a non-empty string when provided');
+            }
+            validated.workspaceId = validated.workspaceId.trim();
         }
 
         // Validate timeout
@@ -236,6 +254,7 @@ class ConfigManager {
         return {
             proxyUrl: 'https://mcp.uruintelligence.com', // or 'http://localhost:3001' for development
             token: 'your-auth-token-here',
+            workspaceId: null,
             debug: false,
             timeout: 30000,
             retries: 3,
@@ -258,6 +277,9 @@ class ConfigManager {
                     args: ['-y', 'uru-mcp@latest'],
                     env: {
                         URU_API_KEY: exampleConfig.token || 'your-auth-token-here',
+                        ...(exampleConfig.workspaceId
+                            ? { URU_WORKSPACE_ID: exampleConfig.workspaceId }
+                            : {}),
                     },
                 },
             },

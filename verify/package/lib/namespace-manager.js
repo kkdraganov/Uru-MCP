@@ -281,6 +281,7 @@ class ToolNamespaceManager {
         this.config = config;
         this.proxyUrl = config.proxyUrl;
         this.token = config.token;
+        this.workspaceId = config.workspaceId || null;
         this.debug = config.debug || false;
         this.appsCache = {
             data: null,
@@ -371,7 +372,7 @@ class ToolNamespaceManager {
 
         return {
             name: `${namespace}__list_tools`,
-            description: `List all available tools in the ${finalDisplayName} namespace`,
+            description: `List tools for ${finalDisplayName}`,
             inputSchema: {
                 type: 'object',
                 properties: {
@@ -397,7 +398,7 @@ class ToolNamespaceManager {
                 required: [],
             },
             annotations: {
-                title: `${icon} ${finalDisplayName} Tool Discovery`,
+                title: `${icon} ${finalDisplayName} Discovery`,
                 category: 'discovery',
                 namespace: appName,
                 priority: 'high',
@@ -418,7 +419,7 @@ class ToolNamespaceManager {
 
         return {
             name: `${namespace}__execute_tool`,
-            description: `Execute a specific tool in the ${finalDisplayName} namespace`,
+            description: `Execute a tool in ${finalDisplayName}`,
             inputSchema: {
                 type: 'object',
                 properties: {
@@ -436,7 +437,7 @@ class ToolNamespaceManager {
                 required: ['tool_name'],
             },
             annotations: {
-                title: `${icon} ${finalDisplayName} Tool Execution`,
+                title: `${icon} ${finalDisplayName} Execution`,
                 category: 'execution',
                 namespace: appName,
                 priority: 'high',
@@ -841,12 +842,16 @@ class ToolNamespaceManager {
     getAuthHeaders(apiKey = null) {
         const headers = {
             'Content-Type': 'application/json',
+            'X-Source-Context': 'mcp_claude',
         };
 
         // Use provided API key, fallback to configured token
         const tokenToUse = apiKey || this.token;
         if (tokenToUse) {
             headers['Authorization'] = `Bearer ${tokenToUse}`;
+        }
+        if (this.workspaceId) {
+            headers['X-Workspace-Id'] = this.workspaceId;
         }
 
         return headers;

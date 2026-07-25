@@ -12,15 +12,11 @@ async function testMCPServer(token, options = {}) {
   console.log(chalk.blue('🧪 Simple MCP Server Test'));
   console.log(chalk.gray('Testing basic server startup and communication\n'));
 
-  if (options.debug) {
-    console.log(chalk.gray(`Using token: ${token.substring(0, 20)}...`));
-  }
-  
   // Start the MCP server process
   const serverProcess = spawn('node', ['bin/uru-mcp.js'], {
     env: {
       ...process.env,
-      URU_TOKEN: token,
+      URU_API_KEY: token,
       URU_DEBUG: options.debug ? 'true' : 'false'
     },
     stdio: ['pipe', 'pipe', 'pipe']
