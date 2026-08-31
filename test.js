@@ -14,6 +14,7 @@ async function main() {
 
     const claudeConfig = configManager.getClaudeDesktopConfig({
         token: 'uru_test_token',
+        workspaceId: '11111111-1111-4111-8111-111111111111',
     });
     assert.deepStrictEqual(claudeConfig.mcpServers.uru.args, [
         '-y',
@@ -23,10 +24,35 @@ async function main() {
         claudeConfig.mcpServers.uru.env.URU_API_KEY,
         'uru_test_token'
     );
+    assert.strictEqual(
+        claudeConfig.mcpServers.uru.env.URU_WORKSPACE_ID,
+        '11111111-1111-4111-8111-111111111111'
+    );
+
+    const originalWorkspaceId = process.env.URU_WORKSPACE_ID;
+    process.env.URU_WORKSPACE_ID = '22222222-2222-4222-8222-222222222222';
+    try {
+        const envConfig = await configManager.loadConfig();
+        assert.strictEqual(
+            envConfig.workspaceId,
+            '22222222-2222-4222-8222-222222222222'
+        );
+    } finally {
+        if (originalWorkspaceId === undefined) {
+            delete process.env.URU_WORKSPACE_ID;
+        } else {
+            process.env.URU_WORKSPACE_ID = originalWorkspaceId;
+        }
+    }
+    assert.throws(
+        () => configManager.validateConfig({ workspaceId: 'bad\nheader' }),
+        /Workspace ID must be a valid UUID/
+    );
 
     const baseConfig = configManager.validateConfig({
         proxyUrl: 'https://mcp.uruintelligence.com',
         token: 'uru_test_token',
+        workspaceId: '11111111-1111-4111-8111-111111111111',
         debug: false,
         timeout: 30000,
         retries: 3,
@@ -159,6 +185,16 @@ async function main() {
         assert.strictEqual(
             postCalls[0].options.headers.Authorization,
             'Bearer uru_call_specific_key'
+        );
+        assert.strictEqual(
+            postCalls[0].options.headers['X-Uru-Workspace-Id'],
+            '11111111-1111-4111-8111-111111111111'
+        );
+        assert.strictEqual(
+            defaultServer.namespaceManager.getAuthHeaders()[
+                'X-Uru-Workspace-Id'
+            ],
+            '11111111-1111-4111-8111-111111111111'
         );
         assert.strictEqual(
             postCalls[0].options.headers['X-Namespace'],
