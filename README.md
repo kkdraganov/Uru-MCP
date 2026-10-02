@@ -4,7 +4,7 @@ A Model Context Protocol (MCP) server that provides AI assistants with access to
 
 ## Overview
 
-**Uru MCP v3.7.2** enables AI assistants to work directly with Uru Platform services through the Model Context Protocol. The server provides a standardized, MCP-compliant interface for accessing Uru's AI tools and capabilities via an innovative hierarchical tool namespace system with dynamic loading, intelligent caching, and automatic cleanup.
+**Uru MCP v3.7.3** enables AI assistants to work directly with Uru Platform services through the Model Context Protocol. The server provides a standardized, MCP-compliant interface for accessing Uru's AI tools and capabilities via an innovative hierarchical tool namespace system with dynamic loading, intelligent caching, and automatic cleanup.
 
 The server works seamlessly with MCP client applications such as [Claude Desktop](https://claude.ai/download), [VS Code](https://code.visualstudio.com/docs/copilot/chat/mcp-servers), [Cursor](https://www.cursor.com/), and other MCP-compatible clients.
 
@@ -166,6 +166,7 @@ call gmail_work_kal__execute_tool {
 - **App Cache TTL**: 30 seconds (configurable via `cacheTimeout`)
 - **Benefits**: Reduces API calls and improves response times
 - **Change Detection**: Uses lightweight version polling (`/tools/sync/version`) with ETag/304, not full namespace polling
+- **Sync Failures**: Server errors (5xx), rate limits (429), and network errors back off with full jitter up to 15 minutes and honor `Retry-After`; a rejected API key (401/403) or a missing or invalid workspace (400 `workspace_required` / `workspace_id_invalid`) stops sync polling with one log line until the client restarts
 
 **MCP Client Compatibility**
 - **Protocol Version**: MCP 2025-06-18 specification
@@ -366,7 +367,7 @@ The server uses JSON-RPC 2.0 over STDIO. All communication follows the MCP speci
 ```json
 {
   "name": "uru-mcp",
-  "version": "3.7.2",
+  "version": "3.7.3",
   "title": "Uru Platform MCP Server",
   "description": "Model Context Protocol server providing access to Uru Platform AI tools and capabilities"
 }
@@ -762,6 +763,12 @@ For custom MCP client integration, the server supports:
 - **Key Rotation:** Per-request API keys make key rotation easier and more secure
 
 ## 📋 Changelog
+
+### Version 3.7.3
+- Stopped `/tools/sync/version` polling for good on 401, 403, and 400 `workspace_required` / `workspace_id_invalid`, with one stderr line that tells the user to run `uru mcp install --workspace <id>` or fix `URU_API_KEY`
+- Backed off on 5xx, 429, and network errors with full jitter (random wait up to `min(15 min, interval * 2^n)`), honored `Retry-After` (seconds or HTTP date), and reset to the normal interval after a 200 or 304
+- Replaced the fixed `setInterval` with a single timer chain so two version polls never run at once
+- Sent `User-Agent: Uru-MCP/<package version>` instead of the fixed `Uru-MCP-Proxy/1.0.0`; the CLI, server info, and User-Agent now read the version from `package.json`
 
 ### Version 3.7.2
 - Forwarded `URU_WORKSPACE_ID` on discovery and execution requests so MCP clients use the selected Uru workspace
