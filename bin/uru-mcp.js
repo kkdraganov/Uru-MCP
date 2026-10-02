@@ -17,6 +17,7 @@ const os = require('os');
 // Import our MCP server
 const UruMCPServer = require('../lib/mcp-server');
 const ConfigManager = require('../lib/config-manager');
+const { PACKAGE_VERSION } = require('../lib/version');
 
 const program = new Command();
 let activeServer = null;
@@ -25,7 +26,7 @@ let shutdownInFlight = false;
 program
     .name('uru-mcp')
     .description('Model Context Protocol (MCP) server for Uru Platform integration')
-    .version('3.7.2')
+    .version(PACKAGE_VERSION)
     .option('-k, --key <key>', 'Authentication token')
     .option('-d, --debug', 'Enable debug mode')
     .option(
